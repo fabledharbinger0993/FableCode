@@ -1,6 +1,8 @@
 node_modules/
 dist/
 dist-electron/
+release/mac-arm64/
+release/builder-debug.yml
 .DS_Store
 .env
 .env.*

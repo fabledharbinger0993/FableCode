@@ -1,0 +1,10 @@
+name: fablecode
+channels:
+  - conda-forge
+dependencies:
+  - nodejs>=20
+  - python>=3.11
+  - pip
+  - git
+  - pip:
+      - requests>=2.32

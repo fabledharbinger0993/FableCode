@@ -1,15 +1,8 @@
 node_modules/
 dist/
 dist-electron/
-
-# Electron builder output — never commit release artifacts
-release/
-!release/.gitkeep
-
-# TypeScript build cache — regenerated automatically, not source
-*.tsbuildinfo
-tsconfig.*.tsbuildinfo
-
+release/mac-arm64/
+release/builder-debug.yml
 .DS_Store
 .env
 .env.*

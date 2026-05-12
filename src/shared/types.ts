@@ -15,10 +15,54 @@ export interface ChatMessage {
   content: string;
 }
 
-export interface OllamaModel {
+export interface AnthropicModel {
+  id: string;
   name: string;
-  modified_at?: string;
-  size?: number;
+}
+
+// Lesson types
+export interface SliderParam {
+  label: string;
+  property: string;
+  selector?: string;
+  type: 'slider';
+  min: number;
+  max: number;
+  default: number;
+  unit: string;
+  shadow_component?: 'x' | 'y' | 'blur' | 'spread';
+}
+
+export interface ColorParam {
+  label: string;
+  property: string;
+  selector?: string;
+  type: 'color';
+  default: string;
+  show_formats?: boolean;
+  shadow_component?: 'color';
+}
+
+export interface SelectParam {
+  label: string;
+  property: string;
+  selector?: string;
+  type: 'select';
+  options: string[];
+  default: string;
+}
+
+export type LessonParam = SliderParam | ColorParam | SelectParam;
+
+export interface Lesson {
+  id: string;
+  title: string;
+  concept: string;
+  html: string;
+  css: string;
+  parameters: LessonParam[];
+  next_concept: string | null;
+  sandbox?: boolean;
 }
 
 export interface WorkspaceFile {
@@ -27,11 +71,88 @@ export interface WorkspaceFile {
   extension: string;
 }
 
+export type FlowBlockKind =
+  | 'trigger'
+  | 'agent'
+  | 'model'
+  | 'tool'
+  | 'function'
+  | 'condition'
+  | 'route'
+  | 'memory'
+  | 'file'
+  | 'terminal'
+  | 'git'
+  | 'api'
+  | 'approval'
+  | 'output';
+
+export type FlowPortKind = 'input' | 'output';
+
+export type FlowRouteKind = 'default' | 'success' | 'failure' | 'condition' | 'ai-selected' | 'manual-approval' | 'fallback';
+
+export interface FlowPort {
+  id: string;
+  name: string;
+  kind: FlowPortKind;
+  dataType: 'any' | 'text' | 'json' | 'file' | 'command' | 'model' | 'memory' | 'decision';
+}
+
+export interface FlowBlockPosition {
+  x: number;
+  y: number;
+}
+
+export interface FlowBlock {
+  id: string;
+  kind: FlowBlockKind;
+  title: string;
+  description: string;
+  instructions: string;
+  position: FlowBlockPosition;
+  inputs: FlowPort[];
+  outputs: FlowPort[];
+  tags: string[];
+  suggestedBy?: 'system' | 'user' | 'copilot';
+}
+
+export interface FlowRoute {
+  id: string;
+  fromBlockId: string;
+  fromPortId: string;
+  toBlockId: string;
+  toPortId: string;
+  label: string;
+  kind: FlowRouteKind;
+}
+
+export interface FlowSuggestion {
+  id: string;
+  title: string;
+  detail: string;
+  blockKind: FlowBlockKind;
+  routeKind: FlowRouteKind;
+}
+
+export interface FlowDefinition {
+  id: string;
+  name: string;
+  goal: string;
+  blocks: FlowBlock[];
+  routes: FlowRoute[];
+  suggestions: FlowSuggestion[];
+  updatedAt: string;
+}
+
 export interface ToolchainCommand {
   name: string;
   path: string;
   source: string;
 }
+
+export type ToolkitCategory = 'ai' | 'runtime' | 'container' | 'cloud' | 'git' | 'quality' | 'data' | 'design' | 'build';
+export type ToolkitStatus = 'available' | 'partial' | 'missing';
+export type ToolkitSource = 'djmt' | 'system' | 'workspace' | 'vscode' | 'mcp';
 
 export interface ToolchainSummary {
   rootPath: string;
@@ -41,36 +162,6 @@ export interface ToolchainSummary {
   directories: string[];
   commands: ToolchainCommand[];
   configFiles: string[];
-}
-
-export type ToolkitCategory = 'ai' | 'cloud' | 'runtime' | 'quality' | 'data' | 'git' | 'design' | 'container' | 'build';
-
-export type ToolkitStatus = 'available' | 'partial' | 'missing';
-
-export type ToolkitSource = 'system' | 'djmt' | 'workspace' | 'vscode' | 'mcp';
-
-export interface ToolkitCapability {
-  id: string;
-  name: string;
-  category: ToolkitCategory;
-  status: ToolkitStatus;
-  summary: string;
-  commands: ToolchainCommand[];
-  configFiles: string[];
-  extensionMatches: string[];
-  referencePaths: string[];
-  sources: ToolkitSource[];
-  notes: string[];
-}
-
-export interface ToolkitSummary {
-  checkedAt: string;
-  workspacePath: string;
-  toolchainRoot: string;
-  availableCount: number;
-  partialCount: number;
-  missingCount: number;
-  capabilities: ToolkitCapability[];
 }
 
 export interface DebugFinding {
@@ -99,6 +190,32 @@ export interface PersistenceSnapshot {
   includeToolchainContext: boolean;
   debugFocus: string;
   messages: ChatMessage[];
+  sandboxFlow?: FlowDefinition;
+  sandboxMessages?: ChatMessage[];
+}
+
+export interface ToolkitCapability {
+  id: string;
+  name: string;
+  category: ToolkitCategory;
+  summary: string;
+  status: ToolkitStatus;
+  sources: ToolkitSource[];
+  commands: ToolchainCommand[];
+  configFiles: string[];
+  extensionMatches: string[];
+  referencePaths: string[];
+  notes: string[];
+}
+
+export interface ToolkitSummary {
+  checkedAt: string;
+  workspacePath?: string;
+  toolchainRoot: string;
+  availableCount: number;
+  partialCount: number;
+  missingCount: number;
+  capabilities: ToolkitCapability[];
 }
 
 export interface HolograimStatus {
@@ -135,7 +252,7 @@ export interface RecallResult {
 }
 
 export interface FableApi {
-  listModels: () => Promise<OllamaModel[]>;
+  listModels: () => Promise<AnthropicModel[]>;
   chat: (payload: { model: string; messages: ChatMessage[]; temperature?: number }) => Promise<string>;
   pickWorkspace: () => Promise<string | null>;
   listWorkspaceFiles: (workspacePath: string) => Promise<WorkspaceFile[]>;

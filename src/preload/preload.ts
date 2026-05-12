@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AgentProfile,
+  AnthropicModel,
   ChatMessage,
   DebugReport,
   HolograimStatus,
-  OllamaModel,
   PersistenceLoadResult,
   PersistenceSaveResult,
   PersistenceSnapshot,
@@ -15,9 +15,9 @@ import type {
 } from '../shared/types';
 
 const api = {
-  listModels: (): Promise<OllamaModel[]> => ipcRenderer.invoke('ollama:listModels'),
+  listModels: (): Promise<AnthropicModel[]> => ipcRenderer.invoke('anthropic:listModels'),
   chat: (payload: { model: string; messages: ChatMessage[]; temperature?: number }): Promise<string> =>
-    ipcRenderer.invoke('ollama:chat', payload),
+    ipcRenderer.invoke('anthropic:chat', payload),
   pickWorkspace: (): Promise<string | null> => ipcRenderer.invoke('workspace:pick'),
   listWorkspaceFiles: (workspacePath: string): Promise<WorkspaceFile[]> =>
     ipcRenderer.invoke('workspace:listFiles', workspacePath),

@@ -1,8 +1,7 @@
 node_modules/
 dist/
 dist-electron/
-release/mac-arm64/
-release/builder-debug.yml
+release/
 .DS_Store
 .env
 .env.*
@@ -12,4 +11,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-store/
-.qodo/cache/
+.qodo/
+.venv/
+*.tsbuildinfo

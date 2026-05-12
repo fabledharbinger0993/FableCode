@@ -11,7 +11,7 @@
     "dist:mac": "npm run build && electron-builder --mac dmg",
     "start": "electron .",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
-    "check:ollama": "node scripts/check-ollama.mjs"
+    "check:anthropic": "node scripts/check-anthropic.mjs"
   },
   "build": {
     "appId": "com.fableharbinger.fablecode",

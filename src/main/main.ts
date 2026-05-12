@@ -5,7 +5,10 @@ import dotenv from 'dotenv';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Load .env — app.getAppPath() always resolves to the Scaffold/ root in Electron
-dotenv.config({ path: path.join(app.getAppPath(), '.env') });
+const dotenvResult = dotenv.config({ path: path.join(app.getAppPath(), '.env') });
+if (dotenvResult.error) {
+  console.warn('[dotenv] .env not loaded:', dotenvResult.error.message);
+}
 import { registerPersistenceHandlers } from './persistence';
 import { inspectToolkits } from './toolkits';
 import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, ToolkitSummary, ToolchainCommand, ToolchainSummary, WorkspaceFile } from '../shared/types';

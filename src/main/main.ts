@@ -1,11 +1,21 @@
 import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import dotenv from 'dotenv';
+import Anthropic from '@anthropic-ai/sdk';
+
+// Load .env — app.getAppPath() always resolves to the Scaffold/ root in Electron
+dotenv.config({ path: path.join(app.getAppPath(), '.env') });
 import { registerPersistenceHandlers } from './persistence';
 import { inspectToolkits } from './toolkits';
-import type { AgentProfile, ChatMessage, DebugFinding, DebugReport, OllamaModel, ToolkitSummary, ToolchainCommand, ToolchainSummary, WorkspaceFile } from '../shared/types';
+import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, ToolkitSummary, ToolchainCommand, ToolchainSummary, WorkspaceFile } from '../shared/types';
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434';
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? '';
+const ANTHROPIC_MODELS: AnthropicModel[] = [
+  { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5' },
+  { id: 'claude-haiku-3-5',  name: 'Claude Haiku 3.5'  },
+  { id: 'claude-opus-4',     name: 'Claude Opus 4'     },
+];
 const DEFAULT_TOOLCHAIN_ROOT = '/Volumes/DJMT/FABLEDHARBINGER/toolchains';
 const MAX_FILES = 500;
 const MAX_READ_BYTES = 1024 * 1024;
@@ -60,7 +70,8 @@ function createWindow(): void {
   });
 }
 
-app.whenReady().then(() => {
+void (async () => {
+  await app.whenReady();
   registerPersistenceHandlers();
   createWindow();
 
@@ -69,7 +80,7 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
-});
+})();
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -77,22 +88,12 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.handle('ollama:listModels', async (): Promise<OllamaModel[]> => {
-  try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
-    if (!response.ok) {
-      throw new Error(`Ollama returned ${response.status}`);
-    }
-
-    const data = await response.json() as { models?: OllamaModel[] };
-    return data.models ?? [];
-  } catch {
-    return [];
-  }
+ipcMain.handle('anthropic:listModels', async (): Promise<AnthropicModel[]> => {
+  return ANTHROPIC_MODELS;
 });
 
-ipcMain.handle('ollama:chat', async (_event: IpcMainInvokeEvent, payload: { model: string; messages: ChatMessage[]; temperature?: number }) => {
-  return postOllamaChat(payload.model, payload.messages, payload.temperature);
+ipcMain.handle('anthropic:chat', async (_event: IpcMainInvokeEvent, payload: { model: string; messages: ChatMessage[]; temperature?: number }) => {
+  return postAnthropicChat(payload.model, payload.messages, payload.temperature);
 });
 
 ipcMain.handle('workspace:pick', async (): Promise<string | null> => {
@@ -166,48 +167,41 @@ ipcMain.handle('debug:analyze', async (_event: IpcMainInvokeEvent, payload: {
   ].join('\n');
 
   try {
-    report.agentReview = await postOllamaChat(payload.model, [
+    report.agentReview = await postAnthropicChat(payload.model, [
       { role: 'system', content: payload.agent.systemPrompt },
       { role: 'user', content: reviewPrompt }
     ], payload.agent.temperature);
   } catch (error) {
-    report.agentReview = `Ollama review unavailable: ${error instanceof Error ? error.message : 'unknown error'}`;
+    report.agentReview = `Anthropic review unavailable: ${error instanceof Error ? error.message : 'unknown error'}`;
   }
 
   return report;
 });
 
-async function postOllamaChat(model: string, messages: ChatMessage[], temperature = 0.2): Promise<string> {
+async function postAnthropicChat(model: string, messages: ChatMessage[], temperature = 0.2): Promise<string> {
   if (!model) {
-    throw new Error('Choose an Ollama model before sending a request.');
+    throw new Error('Choose an Anthropic model before sending a request.');
+  }
+  if (!ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY is not set. Add it to your .env file.');
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120000);
+  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
-  try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: false,
-        options: { temperature }
-      }),
-      signal: controller.signal
-    });
+  // Separate the optional system message from user/assistant turns
+  const systemMsg = messages.find(m => m.role === 'system');
+  const conversationMessages = messages.filter(m => m.role !== 'system') as Array<{ role: 'user' | 'assistant'; content: string }>;
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Ollama returned ${response.status}: ${body}`);
-    }
+  const response = await client.messages.create({
+    model,
+    max_tokens: 4096,
+    temperature,
+    ...(systemMsg ? { system: systemMsg.content } : {}),
+    messages: conversationMessages
+  });
 
-    const data = await response.json() as { message?: { content?: string }; response?: string };
-    return data.message?.content ?? data.response ?? '';
-  } finally {
-    clearTimeout(timeout);
-  }
+  const block = response.content[0];
+  return block?.type === 'text' ? block.text : '';
 }
 
 async function listWorkspaceFiles(workspacePath: string): Promise<WorkspaceFile[]> {

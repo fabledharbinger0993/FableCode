@@ -1,7 +1,7 @@
 {
   "name": "fablecode",
   "version": "0.1.0",
-  "description": "Local-first AI coding workbench powered by Ollama agents.",
+  "description": "Local-first AI coding workbench and CSS learning environment powered by Anthropic agents.",
   "private": true,
   "main": "dist/main/main.js",
   "scripts": {
@@ -51,7 +51,9 @@
     }
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "latest",
     "@vitejs/plugin-react": "latest",
+    "dotenv": "^17.4.2",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest"

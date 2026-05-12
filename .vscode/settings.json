@@ -1,3 +1,26 @@
 {
-    "sarif-viewer.connectToGithubCodeScanning": "off"
+    "sarif-viewer.connectToGithubCodeScanning": "off",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "search.exclude": {
+        "node_modules": true,
+        "dist": true,
+        "dist-electron": true,
+        "release": true,
+        ".venv": true,
+        "*.tsbuildinfo": true
+    },
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/release/**": true
+    },
+    "files.exclude": {
+        "**/.DS_Store": true,
+        "**/*.tsbuildinfo": true
+    },
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "eslint.validate": ["typescript", "typescriptreact", "javascript"],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    }
 }

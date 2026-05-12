@@ -394,7 +394,7 @@ function ConversationView({
             {copiedKey === copyKey ? <Check size={14} /> : <Copy size={14} />}
           </button>
         </div>
-        <p>{message.content}</p>
+        <p className="message-body">{message.content}</p>
       </article>
     );
   });

@@ -1603,3 +1603,11 @@ small,
 .model-select { width: 100%; }
 
 .learn-btn { width: 100%; padding: 8px; font-weight: 600; }
+
+/* Preserve newlines and code indentation in assistant messages */
+.message-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-family: inherit;
+}

@@ -1,7 +1,7 @@
 /**
  * FableCode companion backend server.
  *
- * Exposes the Anthropic AI endpoints over HTTP so that the Capacitor iOS app
+ * Exposes the Groq AI endpoints over HTTP so that the Capacitor iOS app
  * (and any plain-browser deployment) can reach them without an Electron IPC
  * bridge.  Deploy this server on a Mac reachable from the device (same Wi-Fi,
  * Tailscale, or a cloud host) and point the app at it via the backend URL
@@ -23,18 +23,18 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, WorkspaceFile } from '../src/shared/types';
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? '';
+const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 const PORT = Number(process.env.PORT ?? 3333);
 
 const ANTHROPIC_MODELS: AnthropicModel[] = [
-  { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5' },
-  { id: 'claude-haiku-3-5', name: 'Claude Haiku 3.5' },
-  { id: 'claude-opus-4', name: 'Claude Opus 4' }
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
+  { id: 'llama-3.1-8b-instant',    name: 'Llama 3.1 8B'  },
+  { id: 'mixtral-8x7b-32768',      name: 'Mixtral 8x7B'  },
 ];
 
 const textExtensions = new Set([
@@ -103,7 +103,7 @@ app.post('/debug/analyze', async (req: Request, res: Response, next: NextFunctio
       toolchainContext?: string;
     };
 
-    if (!payload.model || !ANTHROPIC_API_KEY) {
+    if (!payload.model || !GROQ_API_KEY) {
       res.json('');
       return;
     }
@@ -135,7 +135,7 @@ app.post('/debug/analyze', async (req: Request, res: Response, next: NextFunctio
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    anthropicConfigured: ANTHROPIC_API_KEY.length > 0,
+    groqConfigured: GROQ_API_KEY.length > 0,
     models: ANTHROPIC_MODELS.map((m) => m.id)
   });
 });
@@ -209,8 +209,8 @@ app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
 
 app.listen(PORT, () => {
   console.log(`FableCode backend listening on http://localhost:${PORT}`);
-  if (!ANTHROPIC_API_KEY) {
-    console.warn('[server] ANTHROPIC_API_KEY is not set — chat and debug review will fail.');
+  if (!GROQ_API_KEY) {
+    console.warn('[server] GROQ_API_KEY is not set — chat and debug review will fail.');
   }
 });
 
@@ -256,28 +256,20 @@ async function walk(root: string, current: string, files: WorkspaceFile[]): Prom
 // ── Anthropic helper ─────────────────────────────────────────────────────
 
 async function postAnthropicChat(model: string, messages: ChatMessage[], temperature = 0.2): Promise<string> {
-  if (!ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY is not set on the backend server.');
+  if (!GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not set on the backend server.');
   }
 
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const client = new Groq({ apiKey: GROQ_API_KEY });
 
-  const systemMsg = messages.find((m) => m.role === 'system');
-  const conversationMessages = messages.filter((m) => m.role !== 'system') as Array<{
-    role: 'user' | 'assistant';
-    content: string;
-  }>;
-
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model,
     max_tokens: 4096,
     temperature,
-    ...(systemMsg ? { system: systemMsg.content } : {}),
-    messages: conversationMessages
+    messages: messages as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
   });
 
-  const block = response.content[0];
-  return block?.type === 'text' ? block.text : '';
+  return response.choices[0]?.message?.content ?? '';
 }
 
 // ── Local debug scan helpers (mirrored from src/main/main.ts) ─────────────

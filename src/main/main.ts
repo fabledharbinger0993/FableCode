@@ -14,7 +14,7 @@ import { inspectToolkits } from './toolkits';
 import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, ToolkitSummary, ToolchainCommand, ToolchainSummary, WorkspaceFile } from '../shared/types';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
-const ANTHROPIC_MODELS: AnthropicModel[] = [
+const GROQ_MODELS: AnthropicModel[] = [
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
   { id: 'llama-3.1-8b-instant',    name: 'Llama 3.1 8B'  },
   { id: 'mixtral-8x7b-32768',      name: 'Mixtral 8x7B'  },
@@ -92,7 +92,7 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('anthropic:listModels', async (): Promise<AnthropicModel[]> => {
-  return ANTHROPIC_MODELS;
+  return GROQ_MODELS;
 });
 
 ipcMain.handle('anthropic:chat', async (_event: IpcMainInvokeEvent, payload: { model: string; messages: ChatMessage[]; temperature?: number }) => {
@@ -175,7 +175,7 @@ ipcMain.handle('debug:analyze', async (_event: IpcMainInvokeEvent, payload: {
       { role: 'user', content: reviewPrompt }
     ], payload.agent.temperature);
   } catch (error) {
-    report.agentReview = `Groq review unavailable: ${error instanceof Error ? error.message : 'unknown error'}`;
+    report.agentReview = `Model review unavailable: ${error instanceof Error ? error.message : 'unknown error'}`;
   }
 
   return report;

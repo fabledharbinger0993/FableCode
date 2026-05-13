@@ -363,13 +363,13 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
       setModels(nextModels);
       if (nextModels.length > 0) {
         setModel((current: string) => current || nextModels[0].id);
-        setStatus('Anthropic models loaded.');
+        setStatus('Models loaded.');
       } else {
         setModel((current: string) => current || agent.modelHint);
-        setStatus('No Anthropic models available.');
+        setStatus('No models available.');
       }
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to load Anthropic models.');
+      setStatus(error instanceof Error ? error.message : 'Unable to load models.');
     } finally {
       setBusy(null);
     }
@@ -567,7 +567,7 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
     const trimmed = text.trim();
     if (!trimmed) return;
     if (!model.trim()) {
-      setStatus('Choose an Anthropic model first.');
+      setStatus('Choose a model first.');
       return;
     }
     chatInFlightRef.current = true;
@@ -599,7 +599,7 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
       setMessages([...nextMessages, { role: 'assistant', content: response || 'The model returned an empty response.' }]);
       setStatus(`${agent.name} completed the turn.`);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'The Anthropic request failed.');
+      setStatus(error instanceof Error ? error.message : 'The model request failed.');
     } finally {
       setBusy(null);
       chatInFlightRef.current = false;
@@ -733,14 +733,14 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
           </div>
         </section>
 
-        <section className="rail-section model-box" aria-labelledby="anthropic-heading">
+        <section className="rail-section model-box" aria-labelledby="model-heading">
           <div className="section-heading">
-            <h2 id="anthropic-heading">Model</h2>
+            <h2 id="model-heading">Model</h2>
             <button className="icon-button" onClick={refreshModels} title="Refresh models" aria-label="Refresh models">
               {busy === 'models' ? <Loader2 className="spin" size={16} /> : <RefreshCw size={16} />}
             </button>
           </div>
-          <label htmlFor="model-input">Anthropic Model</label>
+          <label htmlFor="model-input">Groq Model</label>
           <select
             id="model-input"
             className="model-select"

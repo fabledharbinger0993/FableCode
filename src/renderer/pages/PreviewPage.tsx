@@ -222,7 +222,7 @@ export function PreviewPage() {
               className="preview-frame"
               src={!useHtml ? activeUrl : undefined}
               srcDoc={srcdoc}
-              sandbox="allow-scripts allow-same-origin allow-forms"
+              sandbox="allow-scripts allow-forms"
               title="Live preview"
               referrerPolicy="no-referrer"
             />

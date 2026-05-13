@@ -1,8 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
-  base: './',
+export default defineConfig(({ mode }) => ({
+  // Electron renderer needs a relative base so assets load from the filesystem.
+  // The Capacitor / web build needs an absolute base so Capacitor's WebView can
+  // resolve paths correctly.
+  base: mode === 'web' ? '/' : './',
   plugins: [react()],
   server: {
     host: '127.0.0.1',
@@ -13,4 +16,4 @@ export default defineConfig({
     outDir: 'dist/renderer',
     emptyOutDir: false
   }
-});
+}));

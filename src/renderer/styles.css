@@ -4,6 +4,11 @@
   --electric-blue-faint: rgba(25, 185, 255, 0.13);
   --field-blue-bg: rgba(7, 19, 33, 0.76);
   --ambient-pink: rgba(255, 0, 172, 0.3);
+  /* iOS safe-area variables — fallback to 0 on non-notched devices */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
   color: #eceff4;
   background: #101216;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -17,8 +22,8 @@
 
 body {
   margin: 0;
-  min-width: 1000px;
-  min-height: 720px;
+  /* min-width removed so the app renders on narrow iPhone screens */
+  min-height: 100dvh;
   background: #08090d;
 }
 
@@ -63,8 +68,14 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: 288px minmax(270px, 0.9fr) minmax(390px, 1.35fr) 330px;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #111318;
+  /* Respect iOS notch / Dynamic Island / home indicator */
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  padding-bottom: var(--safe-bottom);
 }
 
 .lava-background {
@@ -1610,4 +1621,172 @@ small,
   word-break: break-word;
   margin: 0;
   font-family: inherit;
+}
+
+/* ── iOS / mobile workspace path form ─────────────────────────────────── */
+.workspace-path-form {
+  display: flex;
+  gap: 0;
+  margin-top: 6px;
+}
+
+.workspace-path-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px 0 0 6px;
+  color: #eceff4;
+  font-size: 0.78rem;
+  padding: 5px 8px;
+  min-width: 0;
+}
+
+/* ── iOS / mobile backend URL section ────────────────────────────────── */
+.backend-section p {
+  font-size: 0.72rem;
+  color: rgba(236, 239, 244, 0.55);
+  margin: 0 0 6px;
+}
+
+.backend-form {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.backend-form input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #eceff4;
+  font-size: 0.75rem;
+  padding: 5px 8px;
+  min-width: 0;
+}
+
+/* ── Responsive layout for tablet and phone ───────────────────────────── */
+
+/* Tablet landscape (768–1079 px) — drop the right debug panel into a row
+   below the main panels so the 4-column grid doesn't get too cramped.       */
+@media (max-width: 1079px) {
+  .app-shell {
+    grid-template-columns: 220px minmax(200px, 1fr) minmax(280px, 1.4fr);
+    grid-template-rows: 1fr auto;
+    overflow: auto;
+  }
+
+  .debug-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 12px 16px;
+    max-height: 340px;
+    overflow-y: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .sandbox-drawer {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Phone portrait (< 768 px) — full single-column stack with a bottom tab bar
+   pattern.  Panels scroll vertically; the chat panel is the primary surface. */
+@media (max-width: 767px) {
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Agent rail becomes a compact horizontal top bar */
+  .agent-rail {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    padding-top: calc(8px + var(--safe-top));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-x: auto;
+    flex-shrink: 0;
+    max-height: 112px;
+  }
+
+  .brand-block { display: none; }
+
+  .agent-rail .primary-action {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .agent-rail .rail-section {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  .agent-list {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .agent-option strong { display: none; }
+  .agent-option small  { display: none; }
+  .agent-dot { width: 10px; height: 10px; }
+
+  .model-box { display: none; }
+
+  .backend-section,
+  .backend-form { width: 160px; }
+
+  /* Workspace and chat panels fill the remaining height */
+  .workspace-panel {
+    display: none; /* Hidden by default on phone; accessible via tab navigation */
+  }
+
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .conversation {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .composer {
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+
+  /* Debug panel and toolchain hidden on small phone — accessible via Grid Sandbox */
+  .debug-panel { display: none; }
+
+  .sandbox-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    overflow-y: auto;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  /* Keyboard avoidance: the composer sticks to the bottom above the keyboard */
+  .composer {
+    position: sticky;
+    bottom: 0;
+    background: #111318;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
 }

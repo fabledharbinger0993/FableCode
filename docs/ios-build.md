@@ -104,7 +104,7 @@ npx ts-node --project server/tsconfig.json server/index.ts
 Find your Mac's local IP:
 
 ```bash
-ipconfig getifaddr en0
+ifconfig en0 | grep 'inet '
 ```
 
 ### Set the URL in the app

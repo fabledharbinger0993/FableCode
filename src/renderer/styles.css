@@ -1788,5 +1788,6 @@ small,
     bottom: 0;
     background: #111318;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-bottom: calc(8px + var(--safe-bottom));
   }
 }

@@ -19,6 +19,7 @@
 
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -55,6 +56,15 @@ const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '4mb' }));
+
+// Rate limiter for file-system routes — prevents enumeration of the host filesystem.
+const filesystemLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many file-system requests, please slow down.' }
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────
 
@@ -130,11 +140,17 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-app.post('/workspace/files', async (req: Request, res: Response, next: NextFunction) => {
+app.post('/workspace/files', filesystemLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workspacePath } = req.body as { workspacePath: string };
     if (!workspacePath) {
       res.status(400).json({ error: 'workspacePath is required' });
+      return;
+    }
+
+    // Reject relative paths to prevent traversal attacks.
+    if (!path.isAbsolute(workspacePath)) {
+      res.status(400).json({ error: 'workspacePath must be an absolute path.' });
       return;
     }
 
@@ -145,7 +161,7 @@ app.post('/workspace/files', async (req: Request, res: Response, next: NextFunct
   }
 });
 
-app.post('/workspace/read', async (req: Request, res: Response, next: NextFunction) => {
+app.post('/workspace/read', filesystemLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { workspacePath, relativePath } = req.body as { workspacePath: string; relativePath: string };
     if (!workspacePath || !relativePath) {
@@ -153,9 +169,17 @@ app.post('/workspace/read', async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
+    // Reject relative workspace roots to prevent traversal attacks.
+    if (!path.isAbsolute(workspacePath)) {
+      res.status(400).json({ error: 'workspacePath must be an absolute path.' });
+      return;
+    }
+
     const root = path.resolve(workspacePath);
     const target = path.resolve(root, relativePath);
-    if (!target.startsWith(root)) {
+
+    // Ensure target is strictly inside root (append sep to prevent /foo matching /foobar).
+    if (!target.startsWith(root + path.sep) && target !== root) {
       res.status(403).json({ error: 'Refusing to read outside the selected workspace.' });
       return;
     }

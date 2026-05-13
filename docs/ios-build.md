@@ -11,7 +11,7 @@ FableCode was originally an Electron desktop app.  The iOS port keeps the React 
 | Component | Purpose |
 |---|---|
 | `src/platform/` | Platform abstraction — returns the Electron IPC bridge on desktop, or an HTTP client on Capacitor/web |
-| `server/index.ts` | Companion Express server — exposes Anthropic AI, file browsing, and debug analysis over HTTP so the iOS app can reach them |
+| `server/index.ts` | Companion Express server — exposes Groq AI, file browsing, and debug analysis over HTTP so the iOS app can reach them |
 
 The iOS app talks to the companion server over the local network (same Wi-Fi), Tailscale, or a cloud deployment.  Features that have no mobile equivalent (DJMT toolchain depot, Holograim MCP subprocess) are gracefully hidden.
 
@@ -89,7 +89,7 @@ The iOS app needs the companion Express server running on a Mac reachable from t
 ### Start the server on your Mac
 
 ```bash
-# Make sure ANTHROPIC_API_KEY is set in .env
+# Make sure GROQ_API_KEY is set in .env
 npm run server
 ```
 
@@ -170,7 +170,7 @@ Required `Info.plist` keys (already scaffolded by Capacitor):
 
 | Feature | Status |
 |---|---|
-| Anthropic chat (Sonnet, Haiku, Opus) | ✅ Via companion server |
+| Groq chat (Llama 3.3 70B, Llama 3.1 8B, Mixtral 8x7B) | ✅ Via companion server |
 | File debug analysis (heuristic scan) | ✅ Runs client-side in the WebView |
 | Model-assisted debug review | ✅ Via companion server |
 | Grid Sandbox flow builder | ✅ Fully client-side |

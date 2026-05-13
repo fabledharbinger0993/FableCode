@@ -31,7 +31,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 const PORT = Number(process.env.PORT ?? 3333);
 
-const ANTHROPIC_MODELS: AnthropicModel[] = [
+const GROQ_MODELS: AnthropicModel[] = [
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
   { id: 'llama-3.1-8b-instant',    name: 'Llama 3.1 8B'  },
   { id: 'mixtral-8x7b-32768',      name: 'Mixtral 8x7B'  },
@@ -69,7 +69,7 @@ const filesystemLimiter = rateLimit({
 // ── Routes ────────────────────────────────────────────────────────────────
 
 app.get('/anthropic/models', (_req: Request, res: Response) => {
-  res.json(ANTHROPIC_MODELS);
+  res.json(GROQ_MODELS);
 });
 
 app.post('/anthropic/chat', async (req: Request, res: Response, next: NextFunction) => {
@@ -136,7 +136,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     groqConfigured: GROQ_API_KEY.length > 0,
-    models: ANTHROPIC_MODELS.map((m) => m.id)
+    models: GROQ_MODELS.map((m) => m.id)
   });
 });
 

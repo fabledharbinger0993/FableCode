@@ -31,6 +31,7 @@ import {
   Wrench
 } from 'lucide-react';
 import { AGENT_PROFILES, DEFAULT_AGENT_ID } from '../shared/agents';
+import { getPlatformApi, isHttpPlatform } from '../platform';
 import type {
   AgentId,
   ChatMessage,
@@ -61,6 +62,11 @@ const defaultToolchainRoot = '/Volumes/DJMT/FABLEDHARBINGER/toolchains';
 const makeSessionId = () => `fablecode-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const makeFlowId = () => `flow-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 const makeBlockId = (kind: FlowBlockKind) => `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+// Module-level platform API singleton — created once, shared across renders.
+const platformApi = getPlatformApi();
+// True when running in the Capacitor / browser context (no Electron IPC).
+const httpPlatform = isHttpPlatform();
 
 type SandboxTemplate = Omit<FlowBlock, 'id' | 'position' | 'suggestedBy'> & {
   accent: string;
@@ -318,7 +324,7 @@ const chatContextInstruction = [
 ].join(' ');
 
 function fableApi(): FableApi {
-  return Reflect.get(globalThis, 'fable') as FableApi;
+  return platformApi;
 }
 
 function recallStatusText(available: boolean, count: number, error?: string): string {
@@ -518,6 +524,10 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
   const [learnOpen, setLearnOpen] = useState(false);
   const [model, setModel] = useState('');
   const [workspacePath, setWorkspacePath] = useState('');
+  const [workspaceInput, setWorkspaceInput] = useState('');
+  const [backendUrl, setBackendUrl] = useState(
+    () => (httpPlatform ? (localStorage.getItem('fablecode_backend_url') ?? 'http://localhost:3333') : '')
+  );
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [fileFilter, setFileFilter] = useState('');
   const [selectedFile, setSelectedFile] = useState('');
@@ -857,7 +867,17 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
   async function openWorkspace() {
     setBusy('workspace');
     try {
-      const pickedPath = await fableApi().pickWorkspace();
+      // On Electron the native folder picker provides the path.
+      // On the HTTP platform the user types a path into workspaceInput which
+      // is resolved by the backend server (useful when browsing files on the
+      // connected Mac from an iOS device).
+      let pickedPath: string | null;
+      if (httpPlatform) {
+        pickedPath = workspaceInput.trim() || null;
+      } else {
+        pickedPath = await fableApi().pickWorkspace();
+      }
+
       if (!pickedPath) {
         return;
       }
@@ -1162,6 +1182,18 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
     }
   }
 
+  function saveBackendUrl(url: string) {
+    const trimmed = url.trim();
+    setBackendUrl(trimmed);
+    try {
+      localStorage.setItem('fablecode_backend_url', trimmed);
+    } catch {
+      // localStorage may be unavailable in sandboxed contexts.
+    }
+    // Reload the page so getPlatformApi() picks up the new URL.
+    globalThis.location.reload();
+  }
+
   function resetSandboxFlow() {
     const nextFlow = createStarterFlow();
     setSandboxFlow(nextFlow);
@@ -1193,6 +1225,22 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
           {busy === 'workspace' ? <Loader2 className="spin" size={18} /> : <FolderOpen size={18} />}
           <span>Open Workspace</span>
         </button>
+
+        {httpPlatform ? (
+          <form
+            className="workspace-path-form"
+            onSubmit={(event) => { event.preventDefault(); void openWorkspace(); }}
+          >
+            <label className="sr-only" htmlFor="workspace-path-input">Workspace path on server</label>
+            <input
+              id="workspace-path-input"
+              className="workspace-path-input"
+              value={workspaceInput}
+              onChange={(event) => setWorkspaceInput(event.target.value)}
+              placeholder="/path/to/project"
+            />
+          </form>
+        ) : null}
 
         <button className="primary-action sandbox-launch" onClick={() => setSandboxOpen(true)}>
           <PanelRightOpen size={18} />
@@ -1246,6 +1294,28 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
             Learn CSS
           </button>
         </section>
+
+        {httpPlatform ? (
+          <section className="rail-section backend-section" aria-labelledby="backend-heading">
+            <h2 id="backend-heading">Backend</h2>
+            <p>Server URL for AI and file access</p>
+            <form
+              className="backend-form"
+              onSubmit={(event) => { event.preventDefault(); saveBackendUrl(backendUrl); }}
+            >
+              <label className="sr-only" htmlFor="backend-url-input">Backend server URL</label>
+              <input
+                id="backend-url-input"
+                value={backendUrl}
+                onChange={(event) => setBackendUrl(event.target.value)}
+                placeholder="http://192.168.x.x:3333"
+              />
+              <button type="submit" className="icon-button" title="Save and reload" aria-label="Save backend URL">
+                <Check size={16} />
+              </button>
+            </form>
+          </section>
+        ) : null}
       </aside>
 
       <section className="workspace-panel" aria-labelledby="workspace-heading">
@@ -1341,6 +1411,7 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
       </section>
 
       <aside className="debug-panel" aria-label="Toolchain and debug controls">
+        {!httpPlatform ? (
         <section className="toolchain-section" aria-labelledby="toolchain-heading">
           <div className="panel-header compact-header">
             <div>
@@ -1403,6 +1474,7 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
             <div className="empty-debug">Inspect the DJMT toolchain root to expose local commands.</div>
           )}
         </section>
+        ) : null}
 
         <ToolkitSection
           toolkits={toolkits}

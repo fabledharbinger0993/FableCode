@@ -54,6 +54,39 @@ export interface SelectParam {
 
 export type LessonParam = SliderParam | ColorParam | SelectParam;
 
+// Ring and pacing types
+export type RingId = 'ring_1' | 'ring_2' | 'ring_3' | 'ring_4' | 'ring_5';
+export type PhaseType = 'intro' | 'core' | 'translation' | 'interference' | 'synthesis' | 'finale' | 'gate';
+export type DomainType = 'logic' | 'visual' | 'translation' | 'synthesis' | 'finale';
+export type PacingMode = 'guided' | 'fast';
+
+export interface PreviewContract {
+  expectedStateShape: string; // JSON schema or description
+  expectedVisibleChanges: string[]; // list of observable UI changes
+  parityCheckRule: 'exact' | 'approximate' | 'semantic'; // how strict the equivalence is
+}
+
+export interface GateCriteria {
+  correctness: number; // target score 0-100
+  parity: number; // representation parity score
+  translation: number; // code ↔ blocks fidelity
+  debug: number; // debug recovery score
+  preview: number; // preview coherence score
+  passThreshold: number; // overall threshold (typically 80)
+}
+
+export interface Ring {
+  id: RingId;
+  title: string;
+  concept: string;
+  tagline: string;
+  color: string;
+  guideCount: number; // lessons in guided path
+  fastCount: number; // lessons in fast path
+  prerequisites: RingId[]; // rings that must be completed first
+  competencies: string[]; // what learner can do after this ring
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -63,6 +96,26 @@ export interface Lesson {
   parameters: LessonParam[];
   next_concept: string | null;
   sandbox?: boolean;
+
+  // Ring-based additions
+  ringId?: RingId;
+  phaseType?: PhaseType;
+  domainType?: DomainType;
+  chapterOrder?: number; // 1-indexed position within ring
+
+  // Pacing and equivalence
+  modePathAvailable?: PacingMode | 'both'; // which paths include this lesson
+  equivalentLessonId?: string; // link to logic ↔ visual equivalents
+  isSkippableInGuided?: boolean; // can guided learners skip this lesson after checkpoint
+
+  // Preview and validation
+  previewContract?: PreviewContract;
+  gateCriteria?: GateCriteria;
+
+  // Metadata
+  isFinale?: boolean;
+  hints?: string[];
+  antiPatterns?: string[];
 }
 
 export interface WorkspaceFile {
@@ -251,6 +304,15 @@ export interface RecallResult {
   error?: string;
 }
 
+export interface WebSearchResult {
+  query: string;
+  answer: string | null;
+  summary: string | null;
+  sourceUrl: string | null;
+  related: Array<{ text: string; url: string }>;
+  error: string | null;
+}
+
 export interface FableApi {
   listModels: () => Promise<AnthropicModel[]>;
   chat: (payload: { model: string; messages: ChatMessage[]; temperature?: number }) => Promise<string>;
@@ -271,4 +333,5 @@ export interface FableApi {
     focus: string;
     toolchainContext?: string;
   }) => Promise<DebugReport>;
+  webSearch: (query: string) => Promise<WebSearchResult>;
 }

@@ -11,6 +11,7 @@ import type {
   RecallResult,
   ToolkitSummary,
   ToolchainSummary,
+  WebSearchResult,
   WorkspaceFile
 } from '../shared/types';
 
@@ -38,7 +39,8 @@ const api = {
     content: string;
     focus: string;
     toolchainContext?: string;
-  }): Promise<DebugReport> => ipcRenderer.invoke('debug:analyze', payload)
+  }): Promise<DebugReport> => ipcRenderer.invoke('debug:analyze', payload),
+  webSearch: (query: string): Promise<WebSearchResult> => ipcRenderer.invoke('web:search', query)
 };
 
 contextBridge.exposeInMainWorld('fable', api);

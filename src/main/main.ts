@@ -11,7 +11,8 @@ if (dotenvResult.error) {
 }
 import { registerPersistenceHandlers } from './persistence';
 import { inspectToolkits } from './toolkits';
-import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, ToolkitSummary, ToolchainCommand, ToolchainSummary, WorkspaceFile } from '../shared/types';
+import { duckduckgoSearch } from './webSearch';
+import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, ToolkitSummary, ToolchainCommand, ToolchainSummary, WebSearchResult, WorkspaceFile } from '../shared/types';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 const GROQ_MODELS: AnthropicModel[] = [
@@ -179,6 +180,10 @@ ipcMain.handle('debug:analyze', async (_event: IpcMainInvokeEvent, payload: {
   }
 
   return report;
+});
+
+ipcMain.handle('web:search', async (_event: IpcMainInvokeEvent, query: string): Promise<WebSearchResult> => {
+  return duckduckgoSearch(query);
 });
 
 async function postAnthropicChat(model: string, messages: ChatMessage[], temperature = 0.2): Promise<string> {

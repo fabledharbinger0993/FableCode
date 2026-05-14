@@ -1,10 +1,32 @@
+// Re-export from rings.ts for backward compatibility
+export {
+  LESSONS,
+  RINGS,
+  RING_1_LESSONS,
+  RING_1_GUIDED,
+  RING_1_FAST,
+  RING_2_LESSONS,
+  RING_2_GUIDED,
+  RING_2_FAST,
+  RING_3_LESSONS,
+  RING_3_GUIDED,
+  RING_3_FAST,
+  RING_4_LESSONS,
+  RING_4_GUIDED,
+  RING_4_FAST,
+  RING_5_LESSONS,
+  RING_5_GUIDED,
+  RING_5_FAST
+} from './rings';
+export type { Ring } from './types';
+
 import type { ColorParam, Lesson } from './types';
 
-// ══════════════════════════════════════════════════════════════
-//  TIER 1 — FOUNDATIONS  (lessons 01 – 12)
-// ══════════════════════════════════════════════════════════════
+// This file is now a re-export hub.
+// All curriculum data has moved to rings.ts
+// Legacy export below is deprecated but kept for reference:
 
-export const LESSONS: Lesson[] = [
+export const LEGACY_LESSONS: Lesson[] = [
   {
     id: 'lesson_01',
     title: 'Your first box',

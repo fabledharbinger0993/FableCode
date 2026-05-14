@@ -1,7 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './LearnPanel.css';
-import { LESSONS } from '../shared/lessons';
-import type { AgentProfile, ChatMessage, Lesson, LessonParam, SliderParam, ColorParam, SelectParam } from '../shared/types';
+import {
+  RINGS,
+  RING_1_GUIDED,
+  RING_1_FAST,
+  RING_2_GUIDED,
+  RING_2_FAST,
+  RING_3_GUIDED,
+  RING_3_FAST,
+  RING_4_GUIDED,
+  RING_4_FAST,
+  RING_5_GUIDED,
+  RING_5_FAST
+} from '../shared/lessons';
+import type {
+  AgentProfile,
+  ChatMessage,
+  Lesson,
+  LessonParam,
+  SliderParam,
+  ColorParam,
+  SelectParam,
+  RingId,
+  PacingMode
+} from '../shared/types';
 
 // ─── fableApi bridge ──────────────────────────────────────
 declare global {
@@ -92,6 +114,25 @@ function approximateColorName(hex: string): string {
   return 'custom color';
 }
 
+function harbingerFocus(lesson: Lesson): string {
+  switch (lesson.phaseType) {
+    case 'intro':
+      return 'Frame the concept, then anchor it with one clean example.';
+    case 'core':
+      return 'Reinforce the state transition and verify each visible change.';
+    case 'translation':
+      return 'Map code and blocks one-to-one before adding complexity.';
+    case 'interference':
+      return 'Trace the divergence point first, then patch the smallest mismatch.';
+    case 'synthesis':
+      return 'Keep both representations in lockstep while building the feature.';
+    case 'finale':
+      return 'Stress test parity and gate criteria before advancing rings.';
+    default:
+      return 'Maintain parity and momentum through the lesson sequence.';
+  }
+}
+
 // ─── Props ────────────────────────────────────────────────
 interface Props {
   agent: AgentProfile;
@@ -99,18 +140,22 @@ interface Props {
   onClose: () => void;
 }
 
-// ─── Tier labels ──────────────────────────────────────────
-function tierFor(index: number): string | null {
-  if (index === 0)  return 'Tier 1 — Foundations';
-  if (index === 12) return 'Tier 2 — Intermediate';
-  if (index === 24) return 'Tier 3 — Advanced';
-  if (index === 36) return 'Sandbox';
-  return null;
-}
+const HARBINGER_IMAGE_PATH = '/harbinger.png';
+
+const LESSONS_BY_RING_MODE: Record<RingId, Record<PacingMode, Lesson[]>> = {
+  ring_1: { guided: RING_1_GUIDED, fast: RING_1_FAST },
+  ring_2: { guided: RING_2_GUIDED, fast: RING_2_FAST },
+  ring_3: { guided: RING_3_GUIDED, fast: RING_3_FAST },
+  ring_4: { guided: RING_4_GUIDED, fast: RING_4_FAST },
+  ring_5: { guided: RING_5_GUIDED, fast: RING_5_FAST }
+};
 
 // ─── LearnPanel ───────────────────────────────────────────
 export default function LearnPanel({ agent, model, onClose }: Props) {
+  const [selectedRingId, setSelectedRingId] = useState<RingId>('ring_1');
+  const [pacingMode, setPacingMode]         = useState<PacingMode>('guided');
   const [lessonIndex, setLessonIndex]       = useState(0);
+  const [harbingerImageReady, setHarbingerImageReady] = useState(true);
   const [htmlCode, setHtmlCode]             = useState('');
   const [cssCode, setCssCode]               = useState('');
   const [shadow, setShadow]                 = useState<ShadowState>({ x: 4, y: 4, blur: 12, spread: 0, color: '#000000' });
@@ -118,24 +163,40 @@ export default function LearnPanel({ agent, model, onClose }: Props) {
   const [chatPrompt, setChatPrompt]         = useState('');
   const [chatBusy, setChatBusy]             = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const visibleLessons = LESSONS_BY_RING_MODE[selectedRingId][pacingMode];
+  const lesson = visibleLessons[lessonIndex] ?? visibleLessons[0];
+  const activeRing = RINGS.find((r) => r.id === selectedRingId);
 
   // ─── Load lesson ────────────────────────────────────────
   const loadLesson = useCallback((index: number) => {
-    const lesson = LESSONS[index];
+    const next = visibleLessons[index];
+    if (!next) return;
     setLessonIndex(index);
-    setHtmlCode(lesson.html ?? '');
-    setCssCode(lesson.css ?? '');
-    setShadow(initShadow(lesson.parameters));
+    setHtmlCode(next.html ?? '');
+    setCssCode(next.css ?? '');
+    setShadow(initShadow(next.parameters));
     setChatMessages([]);
-  }, []);
+  }, [visibleLessons]);
 
-  useEffect(() => { loadLesson(0); }, [loadLesson]);
+  useEffect(() => {
+    setLessonIndex(0);
+    loadLesson(0);
+  }, [selectedRingId, pacingMode, loadLesson]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const lesson = LESSONS[lessonIndex];
+  useEffect(() => {
+    const probe = new Image();
+    probe.onload = () => setHarbingerImageReady(true);
+    probe.onerror = () => setHarbingerImageReady(false);
+    probe.src = HARBINGER_IMAGE_PATH;
+  }, []);
+
+  if (!lesson || !activeRing) {
+    return null;
+  }
 
   // ─── Preview srcdoc ─────────────────────────────────────
   const buildSrcdoc = (html: string, css: string): string => `<!DOCTYPE html>
@@ -154,10 +215,55 @@ body {
     linear-gradient(90deg,rgba(0,80,200,0.05) 1px,transparent 1px);
   background-size:120px 120px,120px 120px,24px 24px,24px 24px;
 }
+.harbinger-scene {
+  position: relative;
+  min-height: calc(100vh - 56px);
+}
+.harbinger-orb {
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 1px solid rgba(236, 72, 153, 0.75);
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.55), 0 0 36px rgba(236, 72, 153, 0.32);
+  animation: harbingerSceneBob 2.9s ease-in-out infinite;
+  background: radial-gradient(circle at 30% 25%, #fb7185 0%, #ec4899 45%, #831843 100%);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 999;
+}
+.harbinger-orb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.harbinger-fallback {
+  color: #fbcfe8;
+  font-family: sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+}
+@keyframes harbingerSceneBob {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0px); }
+}
 ${css}
 </style>
 </head>
-<body>${html}</body>
+<body>
+  <div class="harbinger-scene">
+    ${html}
+    <div class="harbinger-orb" aria-hidden="true">
+      <img src="${HARBINGER_IMAGE_PATH}" alt="Harbinger" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" />
+      <span class="harbinger-fallback" style="display:none;">H</span>
+    </div>
+  </div>
+</body>
 </html>`;
 
   // ─── Apply parameter ─────────────────────────────────────
@@ -221,26 +327,51 @@ ${css}
       {/* ── Header bar ── */}
       <div className="lp-header">
         <span className="lp-header-title">Learn CSS</span>
-        <span className="lp-header-sub">{lesson.title}</span>
+        <span className="lp-header-sub">{activeRing.title} · {lesson.title}</span>
+        <span className="lp-ring-mode-chip">{pacingMode.toUpperCase()}</span>
         <button onClick={onClose} className="lp-close-btn" title="Close Learn mode">✕ Exit Learn</button>
       </div>
 
       <div className="lp-body">
         {/* ── Sidebar: lesson list ── */}
         <aside className="lp-sidebar">
+          <div className="lp-ring-picker">
+            {RINGS.map((ring) => (
+              <button
+                key={ring.id}
+                className={`lp-ring-btn${ring.id === selectedRingId ? ' lp-ring-btn--active' : ''}`}
+                onClick={() => setSelectedRingId(ring.id)}
+                style={{ borderColor: ring.color }}
+              >
+                <span className="lp-ring-btn-title">{ring.title}</span>
+                <span className="lp-ring-btn-sub">{ring.tagline}</span>
+              </button>
+            ))}
+          </div>
+          <div className="lp-mode-toggle" aria-label="Lesson pacing mode">
+            <button
+              className={`lp-mode-btn${pacingMode === 'guided' ? ' lp-mode-btn--active' : ''}`}
+              onClick={() => setPacingMode('guided')}
+            >
+              Guided
+            </button>
+            <button
+              className={`lp-mode-btn${pacingMode === 'fast' ? ' lp-mode-btn--active' : ''}`}
+              onClick={() => setPacingMode('fast')}
+            >
+              Fast
+            </button>
+          </div>
           <div className="lp-lesson-list">
-            {LESSONS.map((l, i) => {
-              const tier = tierFor(i);
+            {visibleLessons.map((l, i) => {
               return (
-                <React.Fragment key={l.id}>
-                  {tier && <div className="lp-tier-label">{tier}</div>}
-                  <button
-                    onClick={() => loadLesson(i)}
-                    className={`lp-lesson-btn${i === lessonIndex ? ' lp-lesson-btn--active' : ''}`}
-                  >
-                    {l.sandbox ? '⬡ Sandbox' : `${String(i + 1).padStart(2, '0')}. ${l.title}`}
-                  </button>
-                </React.Fragment>
+                <button
+                  key={l.id}
+                  onClick={() => loadLesson(i)}
+                  className={`lp-lesson-btn${i === lessonIndex ? ' lp-lesson-btn--active' : ''}`}
+                >
+                  {l.sandbox ? '⬡ Sandbox' : `${String(i + 1).padStart(2, '0')}. ${l.title}`}
+                </button>
               );
             })}
           </div>
@@ -251,6 +382,13 @@ ${css}
           {/* Concept (structured lessons only) */}
           {!lesson.sandbox && (
             <div className="lp-concept-box">
+              <div className="lp-harbinger-banner">
+                <HarbingerAvatar size="small" canRenderImage={harbingerImageReady} />
+                <div className="lp-harbinger-banner-copy">
+                  <p className="lp-harbinger-banner-title">Harbinger</p>
+                  <p className="lp-harbinger-banner-text">Guiding this lesson with live code-to-visual parity.</p>
+                </div>
+              </div>
               <p className="lp-concept-text">{lesson.concept}</p>
               {lesson.next_concept && (
                 <p className="lp-next-concept">Next: {lesson.next_concept}</p>
@@ -299,7 +437,10 @@ ${css}
             /* ── STRUCTURED LESSON: preview + controls row ── */
             <div className="lp-preview-row">
               <div className="lp-preview-container">
-                <div className="lp-panel-label">Preview</div>
+                <div className="lp-panel-label lp-panel-label--with-guide">
+                  <span>Preview</span>
+                  <HarbingerAvatar size="tiny" canRenderImage={harbingerImageReady} />
+                </div>
                 <iframe
                   key={lessonIndex}
                   className="lp-iframe"
@@ -326,9 +467,23 @@ ${css}
             </div>
           )}
 
+          <div className="lp-guide-rail">
+            <div className="lp-guide-rail-head">
+              <HarbingerAvatar size="medium" canRenderImage={harbingerImageReady} />
+              <div>
+                <p className="lp-guide-rail-name">Harbinger</p>
+                <p className="lp-guide-rail-meta">{activeRing.title} · Lesson {lessonIndex + 1}/{visibleLessons.length}</p>
+              </div>
+            </div>
+            <p className="lp-guide-rail-tip">{harbingerFocus(lesson)}</p>
+          </div>
+
           {/* AI tutor chat */}
           <div className="lp-chat-panel">
-            <div className="lp-panel-label">AI Tutor · {agent.name}</div>
+            <div className="lp-panel-label lp-panel-label--with-guide">
+              <span>AI Tutor · {agent.name}</span>
+              <HarbingerAvatar size="tiny" canRenderImage={harbingerImageReady} />
+            </div>
             <div className="lp-chat-messages">
               {chatMessages.length === 0 && (
                 <p className="lp-chat-empty">Ask anything about this lesson…</p>
@@ -368,6 +523,27 @@ ${css}
         </div>
       </div>
     </div>
+  );
+}
+
+function HarbingerAvatar({ size, canRenderImage }: { size: 'small' | 'medium' | 'tiny'; canRenderImage: boolean }) {
+  const avatarClass = `lp-harbinger-avatar lp-harbinger-avatar--${size}`;
+
+  if (!canRenderImage) {
+    return (
+      <div className={avatarClass} aria-label="Harbinger avatar fallback" role="img">
+        H
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={HARBINGER_IMAGE_PATH}
+      alt="Harbinger"
+      className={avatarClass}
+      loading="lazy"
+    />
   );
 }
 

@@ -4,6 +4,11 @@
   --electric-blue-faint: rgba(25, 185, 255, 0.13);
   --field-blue-bg: rgba(7, 19, 33, 0.76);
   --ambient-pink: rgba(255, 0, 172, 0.3);
+  /* iOS safe-area variables — fallback to 0 on non-notched devices */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
   color: #eceff4;
   background: #101216;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -17,8 +22,8 @@
 
 body {
   margin: 0;
-  min-width: 1000px;
-  min-height: 720px;
+  /* min-width removed so the app renders on narrow iPhone screens */
+  min-height: 100dvh;
   background: #08090d;
 }
 
@@ -63,8 +68,14 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: 288px minmax(270px, 0.9fr) minmax(390px, 1.35fr) 330px;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #111318;
+  /* Respect iOS notch / Dynamic Island / home indicator */
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  padding-bottom: var(--safe-bottom);
 }
 
 .lava-background {
@@ -1610,4 +1621,617 @@ small,
   word-break: break-word;
   margin: 0;
   font-family: inherit;
+}
+
+/* ── iOS / mobile workspace path form ─────────────────────────────────── */
+.workspace-path-form {
+  display: flex;
+  gap: 0;
+  margin-top: 6px;
+}
+
+.workspace-path-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px 0 0 6px;
+  color: #eceff4;
+  font-size: 0.78rem;
+  padding: 5px 8px;
+  min-width: 0;
+}
+
+/* ── iOS / mobile backend URL section ────────────────────────────────── */
+.backend-section p {
+  font-size: 0.72rem;
+  color: rgba(236, 239, 244, 0.55);
+  margin: 0 0 6px;
+}
+
+.backend-form {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.backend-form input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #eceff4;
+  font-size: 0.75rem;
+  padding: 5px 8px;
+  min-width: 0;
+}
+
+/* ── Responsive layout for tablet and phone ───────────────────────────── */
+
+/* Tablet landscape (768–1079 px) — drop the right debug panel into a row
+   below the main panels so the 4-column grid doesn't get too cramped.       */
+@media (max-width: 1079px) {
+  .app-shell {
+    grid-template-columns: 220px minmax(200px, 1fr) minmax(280px, 1.4fr);
+    grid-template-rows: 1fr auto;
+    overflow: auto;
+  }
+
+  .debug-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 12px 16px;
+    max-height: 340px;
+    overflow-y: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .sandbox-drawer {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Phone portrait (< 768 px) — full single-column stack with a bottom tab bar
+   pattern.  Panels scroll vertically; the chat panel is the primary surface. */
+@media (max-width: 767px) {
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Agent rail becomes a compact horizontal top bar */
+  .agent-rail {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    padding-top: calc(8px + var(--safe-top));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-x: auto;
+    flex-shrink: 0;
+    max-height: 112px;
+  }
+
+  .brand-block { display: none; }
+
+  .agent-rail .primary-action {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .agent-rail .rail-section {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  .agent-list {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .agent-option strong { display: none; }
+  .agent-option small  { display: none; }
+  .agent-dot { width: 10px; height: 10px; }
+
+  .model-box { display: none; }
+
+  .backend-section,
+  .backend-form { width: 160px; }
+
+  /* Workspace and chat panels fill the remaining height */
+  .workspace-panel {
+    display: none; /* Hidden by default on phone; accessible via tab navigation */
+  }
+
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .conversation {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .composer {
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+
+  /* Debug panel and toolchain hidden on small phone — accessible via Grid Sandbox */
+  .debug-panel { display: none; }
+
+  .sandbox-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    overflow-y: auto;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  /* Keyboard avoidance: the composer sticks to the bottom above the keyboard */
+  .composer {
+    position: sticky;
+    bottom: 0;
+    background: #111318;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AppShell — top nav bar + shell root
+   ═══════════════════════════════════════════════════════════════ */
+
+.shell-root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app-top-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  background: rgba(17, 20, 28, 0.94);
+  border-bottom: 1px solid #262a33;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+}
+
+.top-nav-brand {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #9d3428;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.top-nav-divider {
+  width: 1px;
+  height: 18px;
+  background: #2e3340;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.top-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9fa8b7;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: color 0.14s, background 0.14s, border-color 0.14s;
+}
+
+.top-nav-link:hover {
+  color: #dce3ee;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.top-nav-link--active {
+  color: var(--electric-blue);
+  background: var(--electric-blue-faint);
+  border-color: rgba(25, 185, 255, 0.3);
+}
+
+.top-nav-agent {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.shell-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* BuildPage app-shell when inside shell-content */
+.shell-content .app-shell {
+  height: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Hub page
+   ═══════════════════════════════════════════════════════════════ */
+
+.hub-root {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  overflow: auto;
+  background: #08090d;
+}
+
+.hub-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 900px;
+  padding: 48px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.hub-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hub-brand h1 {
+  font-size: 28px;
+}
+
+.hub-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b7585;
+  margin-bottom: 14px;
+}
+
+/* Agent cards */
+.hub-agents {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 600px) {
+  .hub-agents {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.hub-agent-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #2a2f3a;
+  background: rgba(27, 32, 41, 0.7);
+  text-align: left;
+  color: #eef2f8;
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s;
+  position: relative;
+}
+
+.hub-agent-card:hover {
+  background: rgba(40, 47, 60, 0.85);
+}
+
+.hub-agent-card--active {
+  border-color: var(--agent-color, var(--electric-blue));
+  background: rgba(25, 185, 255, 0.06);
+}
+
+.hub-agent-card strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.hub-agent-card p {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #8590a2;
+}
+
+.hub-agent-check {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 12px;
+  color: var(--agent-color, var(--electric-blue));
+}
+
+/* Mode cards */
+.hub-modes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (min-width: 600px) {
+  .hub-modes {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.hub-mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px 18px;
+  border-radius: 12px;
+  border: 1px solid #2a2f3a;
+  background: rgba(17, 20, 28, 0.72);
+  text-align: left;
+  color: #eef2f8;
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s, transform 0.14s;
+}
+
+.hub-mode-card:hover {
+  border-color: var(--electric-blue);
+  background: rgba(25, 185, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.hub-mode-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(25, 185, 255, 0.12);
+  color: var(--electric-blue);
+}
+
+.hub-mode-label {
+  font-size: 15px;
+}
+
+.hub-mode-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8590a2;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Rail mode nav (inside BuildPage agent-rail)
+   ═══════════════════════════════════════════════════════════════ */
+
+.rail-mode-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.rail-mode-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #9fa8b7;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: color 0.14s, background 0.14s;
+}
+
+.rail-mode-link:hover {
+  color: #dce3ee;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rail-mode-link.active {
+  color: var(--electric-blue);
+  background: var(--electric-blue-faint);
+  border-color: rgba(25, 185, 255, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Blocks page
+   ═══════════════════════════════════════════════════════════════ */
+
+.blocks-page {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  height: 100%;
+  overflow: hidden;
+  background: #111318;
+}
+
+.blocks-chat {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #262a33;
+  background: rgba(17, 20, 28, 0.62);
+  overflow: hidden;
+}
+
+.blocks-canvas-area {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Preview page
+   ═══════════════════════════════════════════════════════════════ */
+
+.preview-page {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  height: 100%;
+  overflow: hidden;
+  background: #111318;
+}
+
+.preview-chat {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #262a33;
+  background: rgba(17, 20, 28, 0.62);
+  overflow: hidden;
+}
+
+.preview-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-toolbar {
+  padding: 10px 14px;
+  border-bottom: 1px solid #262a33;
+  background: rgba(17, 20, 28, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.preview-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-url-form {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+}
+
+.preview-url-input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #2a2f3a;
+  background: #1b2029;
+  color: #eef2f8;
+  font-size: 13px;
+}
+
+.preview-mode-row {
+  flex-wrap: wrap;
+}
+
+.preview-mode-btn {
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid #2a2f3a;
+  background: #1b2029;
+  color: #9fa8b7;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.14s, border-color 0.14s;
+}
+
+.preview-mode-btn.active {
+  color: var(--electric-blue);
+  border-color: rgba(25, 185, 255, 0.4);
+  background: var(--electric-blue-faint);
+}
+
+.preview-html-input {
+  flex: 1 1 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #2a2f3a;
+  background: #1b2029;
+  color: #eef2f8;
+  font-family: monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.preview-frame-wrapper {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: #6b7585;
+}
+
+.preview-empty p {
+  max-width: 320px;
+  text-align: center;
+  font-size: 14px;
+  color: #6b7585;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   School page
+   ═══════════════════════════════════════════════════════════════ */
+
+.school-page {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Override LearnPanel's absolute positioning when inside school-page */
+.school-page .lp-container {
+  position: relative;
+  inset: unset;
+  z-index: auto;
+  height: 100%;
 }

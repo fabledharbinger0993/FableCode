@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'el
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 // Load .env — app.getAppPath() always resolves to the Scaffold/ root in Electron
 const dotenvResult = dotenv.config({ path: path.join(app.getAppPath(), '.env') });
@@ -13,11 +13,11 @@ import { registerPersistenceHandlers } from './persistence';
 import { inspectToolkits } from './toolkits';
 import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, ToolkitSummary, ToolchainCommand, ToolchainSummary, WorkspaceFile } from '../shared/types';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? '';
-const ANTHROPIC_MODELS: AnthropicModel[] = [
-  { id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5' },
-  { id: 'claude-haiku-3-5',  name: 'Claude Haiku 3.5'  },
-  { id: 'claude-opus-4',     name: 'Claude Opus 4'     },
+const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
+const GROQ_MODELS: AnthropicModel[] = [
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
+  { id: 'llama-3.1-8b-instant',    name: 'Llama 3.1 8B'  },
+  { id: 'mixtral-8x7b-32768',      name: 'Mixtral 8x7B'  },
 ];
 const DEFAULT_TOOLCHAIN_ROOT = '/Volumes/DJMT/FABLEDHARBINGER/toolchains';
 const MAX_FILES = 500;
@@ -92,7 +92,7 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('anthropic:listModels', async (): Promise<AnthropicModel[]> => {
-  return ANTHROPIC_MODELS;
+  return GROQ_MODELS;
 });
 
 ipcMain.handle('anthropic:chat', async (_event: IpcMainInvokeEvent, payload: { model: string; messages: ChatMessage[]; temperature?: number }) => {
@@ -175,7 +175,7 @@ ipcMain.handle('debug:analyze', async (_event: IpcMainInvokeEvent, payload: {
       { role: 'user', content: reviewPrompt }
     ], payload.agent.temperature);
   } catch (error) {
-    report.agentReview = `Anthropic review unavailable: ${error instanceof Error ? error.message : 'unknown error'}`;
+    report.agentReview = `Model review unavailable: ${error instanceof Error ? error.message : 'unknown error'}`;
   }
 
   return report;
@@ -183,28 +183,22 @@ ipcMain.handle('debug:analyze', async (_event: IpcMainInvokeEvent, payload: {
 
 async function postAnthropicChat(model: string, messages: ChatMessage[], temperature = 0.2): Promise<string> {
   if (!model) {
-    throw new Error('Choose an Anthropic model before sending a request.');
+    throw new Error('Choose a Groq model before sending a request.');
   }
-  if (!ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY is not set. Add it to your .env file.');
+  if (!GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not set. Add it to your .env file.');
   }
 
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const client = new Groq({ apiKey: GROQ_API_KEY });
 
-  // Separate the optional system message from user/assistant turns
-  const systemMsg = messages.find(m => m.role === 'system');
-  const conversationMessages = messages.filter(m => m.role !== 'system') as Array<{ role: 'user' | 'assistant'; content: string }>;
-
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model,
     max_tokens: 4096,
     temperature,
-    ...(systemMsg ? { system: systemMsg.content } : {}),
-    messages: conversationMessages
+    messages: messages as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
   });
 
-  const block = response.content[0];
-  return block?.type === 'text' ? block.text : '';
+  return response.choices[0]?.message?.content ?? '';
 }
 
 async function listWorkspaceFiles(workspacePath: string): Promise<WorkspaceFile[]> {

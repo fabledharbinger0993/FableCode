@@ -75,6 +75,17 @@ export interface GateCriteria {
   passThreshold: number; // overall threshold (typically 80)
 }
 
+export interface LessonHelpScenario {
+  topic: string;
+  question: string;
+  answer: string;
+}
+
+export interface LessonHelp {
+  objective: string;
+  scenarios: LessonHelpScenario[];
+}
+
 export interface Ring {
   id: RingId;
   title: string;
@@ -116,6 +127,7 @@ export interface Lesson {
   isFinale?: boolean;
   hints?: string[];
   antiPatterns?: string[];
+  help?: LessonHelp;
 }
 
 export interface WorkspaceFile {

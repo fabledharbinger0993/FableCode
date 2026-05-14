@@ -1,26 +1,43 @@
-// Re-export from rings.ts for backward compatibility
-export {
-  LESSONS,
-  RINGS,
-  RING_1_LESSONS,
-  RING_1_GUIDED,
-  RING_1_FAST,
-  RING_2_LESSONS,
-  RING_2_GUIDED,
-  RING_2_FAST,
-  RING_3_LESSONS,
-  RING_3_GUIDED,
-  RING_3_FAST,
-  RING_4_LESSONS,
-  RING_4_GUIDED,
-  RING_4_FAST,
-  RING_5_LESSONS,
-  RING_5_GUIDED,
-  RING_5_FAST
+import {
+  LESSONS as BASE_LESSONS,
+  RING_1_LESSONS as BASE_RING_1_LESSONS,
+  RING_1_GUIDED as BASE_RING_1_GUIDED,
+  RING_1_FAST as BASE_RING_1_FAST,
+  RING_2_LESSONS as BASE_RING_2_LESSONS,
+  RING_2_GUIDED as BASE_RING_2_GUIDED,
+  RING_2_FAST as BASE_RING_2_FAST,
+  RING_3_LESSONS as BASE_RING_3_LESSONS,
+  RING_3_GUIDED as BASE_RING_3_GUIDED,
+  RING_3_FAST as BASE_RING_3_FAST,
+  RING_4_LESSONS as BASE_RING_4_LESSONS,
+  RING_4_GUIDED as BASE_RING_4_GUIDED,
+  RING_4_FAST as BASE_RING_4_FAST,
+  RING_5_LESSONS as BASE_RING_5_LESSONS,
+  RING_5_GUIDED as BASE_RING_5_GUIDED,
+  RING_5_FAST as BASE_RING_5_FAST
 } from './rings';
 export type { Ring } from './types';
+export { RINGS } from './rings';
 
-import type { ColorParam, Lesson } from './types';
+import type { Lesson } from './types';
+import { withLessonHelp } from './lessonHelp';
+
+export const LESSONS = withLessonHelp(BASE_LESSONS);
+export const RING_1_LESSONS = withLessonHelp(BASE_RING_1_LESSONS);
+export const RING_1_GUIDED = withLessonHelp(BASE_RING_1_GUIDED);
+export const RING_1_FAST = withLessonHelp(BASE_RING_1_FAST);
+export const RING_2_LESSONS = withLessonHelp(BASE_RING_2_LESSONS);
+export const RING_2_GUIDED = withLessonHelp(BASE_RING_2_GUIDED);
+export const RING_2_FAST = withLessonHelp(BASE_RING_2_FAST);
+export const RING_3_LESSONS = withLessonHelp(BASE_RING_3_LESSONS);
+export const RING_3_GUIDED = withLessonHelp(BASE_RING_3_GUIDED);
+export const RING_3_FAST = withLessonHelp(BASE_RING_3_FAST);
+export const RING_4_LESSONS = withLessonHelp(BASE_RING_4_LESSONS);
+export const RING_4_GUIDED = withLessonHelp(BASE_RING_4_GUIDED);
+export const RING_4_FAST = withLessonHelp(BASE_RING_4_FAST);
+export const RING_5_LESSONS = withLessonHelp(BASE_RING_5_LESSONS);
+export const RING_5_GUIDED = withLessonHelp(BASE_RING_5_GUIDED);
+export const RING_5_FAST = withLessonHelp(BASE_RING_5_FAST);
 
 // This file is now a re-export hub.
 // All curriculum data has moved to rings.ts
@@ -149,7 +166,7 @@ export const LEGACY_LESSONS: Lesson[] = [
       { label: 'Y offset (up/down)',    property: 'box-shadow', shadow_component: 'y',      type: 'slider', min: -30, max: 30, default: 4,  unit: 'px' },
       { label: 'Blur (softness)',       property: 'box-shadow', shadow_component: 'blur',   type: 'slider', min: 0,   max: 60, default: 12, unit: 'px' },
       { label: 'Spread (size)',         property: 'box-shadow', shadow_component: 'spread', type: 'slider', min: -20, max: 30, default: 0,  unit: 'px' },
-      { label: 'Shadow Color',          property: 'box-shadow', shadow_component: 'color',  type: 'color',  default: '#000000' } as ColorParam
+      { label: 'Shadow Color',          property: 'box-shadow', shadow_component: 'color',  type: 'color',  default: '#000000' }
     ],
     next_concept: 'Images'
   },

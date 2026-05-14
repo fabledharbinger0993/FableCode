@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import './LearnPanel.css';
 import {
   RINGS,
@@ -13,10 +13,12 @@ import {
   RING_5_GUIDED,
   RING_5_FAST
 } from '../shared/lessons';
+import { buildLessonHelpIndex } from '../shared/lessonHelp';
 import type {
   AgentProfile,
   ChatMessage,
   Lesson,
+  LessonHelpScenario,
   LessonParam,
   SliderParam,
   ColorParam,
@@ -162,20 +164,32 @@ export default function LearnPanel({ agent, model, onClose }: Props) {
   const [chatMessages, setChatMessages]     = useState<ChatMessage[]>([]);
   const [chatPrompt, setChatPrompt]         = useState('');
   const [chatBusy, setChatBusy]             = useState(false);
+  const [showLessonHelp, setShowLessonHelp] = useState(false);
+  const [showMasterIndex, setShowMasterIndex] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const visibleLessons = LESSONS_BY_RING_MODE[selectedRingId][pacingMode];
   const lesson = visibleLessons[lessonIndex] ?? visibleLessons[0];
   const activeRing = RINGS.find((r) => r.id === selectedRingId);
+  const lessonHelp = lesson.help?.scenarios ?? [];
+  const lessonHelpIndex = useMemo(() => {
+    return buildLessonHelpIndex(visibleLessons).map((entry, index) => ({
+      ...entry,
+      lessonPosition: index,
+      orderLabel: `${String(index + 1).padStart(2, '0')}. ${entry.lessonTitle}`
+    }));
+  }, [visibleLessons]);
 
   // ─── Load lesson ────────────────────────────────────────
-  const loadLesson = useCallback((index: number) => {
+  const loadLesson = useCallback((index: number, nextChatMessages: ChatMessage[] = []) => {
     const next = visibleLessons[index];
     if (!next) return;
     setLessonIndex(index);
     setHtmlCode(next.html ?? '');
     setCssCode(next.css ?? '');
     setShadow(initShadow(next.parameters));
-    setChatMessages([]);
+    setChatMessages(nextChatMessages);
+    setShowLessonHelp(false);
+    setShowMasterIndex(false);
   }, [visibleLessons]);
 
   useEffect(() => {
@@ -321,6 +335,22 @@ ${css}
     }
   };
 
+  const applyHelpScenario = useCallback((scenario: LessonHelpScenario, targetLessonIndex?: number) => {
+    const scriptedMessages: ChatMessage[] = [
+      { role: 'user', content: scenario.question },
+      { role: 'assistant', content: scenario.answer }
+    ];
+
+    if (typeof targetLessonIndex === 'number' && targetLessonIndex !== lessonIndex) {
+      loadLesson(targetLessonIndex, scriptedMessages);
+      return;
+    }
+
+    setChatMessages((prev) => ([...prev, ...scriptedMessages]));
+    setShowLessonHelp(false);
+    setShowMasterIndex(false);
+  }, [lessonIndex, loadLesson]);
+
   // ─── Render ───────────────────────────────────────────────
   return (
     <div className="lp-container">
@@ -339,9 +369,8 @@ ${css}
             {RINGS.map((ring) => (
               <button
                 key={ring.id}
-                className={`lp-ring-btn${ring.id === selectedRingId ? ' lp-ring-btn--active' : ''}`}
+                className={`lp-ring-btn lp-ring-btn--${ring.id}${ring.id === selectedRingId ? ' lp-ring-btn--active' : ''}`}
                 onClick={() => setSelectedRingId(ring.id)}
-                style={{ borderColor: ring.color }}
               >
                 <span className="lp-ring-btn-title">{ring.title}</span>
                 <span className="lp-ring-btn-sub">{ring.tagline}</span>
@@ -484,9 +513,46 @@ ${css}
               <span>AI Tutor · {agent.name}</span>
               <HarbingerAvatar size="tiny" canRenderImage={harbingerImageReady} />
             </div>
+            <div className="lp-chat-toolbar">
+              <button
+                type="button"
+                className={`lp-chat-tool${showLessonHelp ? ' lp-chat-tool--active' : ''}`}
+                onClick={() => setShowLessonHelp((current) => !current)}
+                disabled={chatBusy || lessonHelp.length === 0}
+              >
+                Help
+              </button>
+              <button
+                type="button"
+                className={`lp-chat-tool${showMasterIndex ? ' lp-chat-tool--active' : ''}`}
+                onClick={() => setShowMasterIndex(true)}
+                disabled={chatBusy || lessonHelpIndex.length === 0}
+              >
+                Master Index
+              </button>
+            </div>
+            {showLessonHelp && lessonHelp.length > 0 && (
+              <div className="lp-help-list" aria-label="Lesson help questions">
+                <p className="lp-help-title">Hot topics for this lesson</p>
+                <p className="lp-help-objective">Objective: {lesson.help?.objective}</p>
+                <div className="lp-help-items">
+                  {lessonHelp.map((scenario, index) => (
+                    <button
+                      key={`${scenario.topic}-${index}`}
+                      type="button"
+                      className="lp-help-question"
+                      onClick={() => applyHelpScenario(scenario)}
+                    >
+                      <span className="lp-help-topic">{scenario.topic}</span>
+                      <span>{scenario.question}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="lp-chat-messages">
               {chatMessages.length === 0 && (
-                <p className="lp-chat-empty">Ask anything about this lesson…</p>
+                <p className="lp-chat-empty">Ask anything about this lesson, or use Help for common trouble spots.</p>
               )}
               {chatMessages.map((m, i) => (
                 <div key={i} className={m.role === 'user' ? 'lp-chat-msg-user' : 'lp-chat-msg-assistant'}>
@@ -509,6 +575,8 @@ ${css}
                 onChange={e => setChatPrompt(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') submitChat(); }}
                 placeholder="Ask about this concept…"
+                aria-label="Ask a lesson question"
+                title="Ask a lesson question"
                 disabled={chatBusy}
               />
               <button
@@ -522,6 +590,57 @@ ${css}
           </div>
         </div>
       </div>
+      {showMasterIndex && (
+        <div
+          className="lp-help-modal-backdrop"
+          onClick={() => setShowMasterIndex(false)}
+        >
+          <dialog
+            open
+            className="lp-help-modal"
+            aria-label="Master help index"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="lp-help-modal-head">
+              <div>
+                <p className="lp-help-modal-title">Master Help Index</p>
+                <p className="lp-help-modal-subtitle">Ordered by lesson availability and broken down by code objective.</p>
+              </div>
+              <button
+                type="button"
+                className="lp-help-modal-close"
+                onClick={() => setShowMasterIndex(false)}
+                aria-label="Close master help index"
+              >
+                ×
+              </button>
+            </div>
+            <div className="lp-help-modal-body">
+              {lessonHelpIndex.map((entry) => (
+                <section key={entry.lessonId} className="lp-help-index-section">
+                  <p className="lp-help-index-lesson">{entry.orderLabel}</p>
+                  <p className="lp-help-index-objective">Code objective: {entry.objective}</p>
+                  <div className="lp-help-index-items">
+                    {entry.scenarios.map((scenario, index) => (
+                      <div key={`${entry.lessonId}-${scenario.topic}-${index}`} className="lp-help-index-item">
+                        <button
+                          type="button"
+                          className="lp-help-question lp-help-question--index"
+                          onClick={() => applyHelpScenario(scenario, entry.lessonPosition)}
+                        >
+                          <span className="lp-help-topic">{scenario.topic}</span>
+                          <span>{scenario.question}</span>
+                        </button>
+                        <p className="lp-help-index-answer">{scenario.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </dialog>
+        </div>
+      )}
     </div>
   );
 }
@@ -571,6 +690,8 @@ function ParamControl({ param, shadow, onApply }: {
             max={p.max}
             value={val}
             className="lp-slider"
+            aria-label={p.label}
+            title={p.label}
             onChange={e => { setVal(e.target.value); onApply(param, e.target.value); }}
           />
           <span className="lp-slider-val">{val}{p.unit || ''}</span>
@@ -590,6 +711,8 @@ function ParamControl({ param, shadow, onApply }: {
             type="color"
             value={val}
             className="lp-color-input"
+            aria-label={p.label}
+            title={p.label}
             onChange={e => { setVal(e.target.value); onApply(param, e.target.value); }}
           />
           <span className="lp-color-val">{val}</span>
@@ -607,6 +730,8 @@ function ParamControl({ param, shadow, onApply }: {
         <select
           value={val}
           className="lp-select"
+          aria-label={p.label}
+          title={p.label}
           onChange={e => { setVal(e.target.value); onApply(param, e.target.value); }}
         >
           {p.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}

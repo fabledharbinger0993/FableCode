@@ -143,7 +143,7 @@ interface Props {
   onClose: () => void;
 }
 
-const HARBINGER_IMAGE_PATH = '/harbinger.png';
+const HARBINGER_IMAGE_PATH = './harbinger.png';
 
 const LESSONS_BY_RING_MODE: Record<RingId, Record<PacingMode, Lesson[]>> = {
   ring_1: { guided: RING_1_GUIDED, fast: RING_1_FAST },

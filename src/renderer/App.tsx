@@ -1289,9 +1289,10 @@ export function App() { // NOSONAR - The Electron workbench state remains centra
           <button
             className="icon-button learn-btn"
             onClick={() => setLearnOpen(true)}
-            title="Open the interactive CSS course"
+            title="Open Education Space"
+            aria-label="Open Education Space"
           >
-            Learn CSS
+            Education Space
           </button>
         </section>
 

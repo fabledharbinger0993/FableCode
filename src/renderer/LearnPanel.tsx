@@ -37,8 +37,9 @@ declare global {
 }
 
 function fableApi() {
-  if (!window.fableApi) throw new Error('fableApi bridge not found');
-  return window.fableApi;
+  const bridge = window.fable ?? window.fableApi;
+  if (!bridge) throw new Error('Electron API bridge not found');
+  return bridge;
 }
 
 // ─── Shadow state ─────────────────────────────────────────

@@ -62,6 +62,9 @@ export function getPlatformApi(): FableApi {
     _api = new HttpPlatformApi(resolveBackendUrl());
   }
 
+  if (!_api) {
+    throw new Error('FableCode platform API could not be initialised.');
+  }
   return _api;
 }
 

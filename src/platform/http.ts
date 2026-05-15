@@ -24,6 +24,7 @@ import type {
   RecallResult,
   ToolkitSummary,
   ToolchainSummary,
+  WebSearchResult,
   WorkspaceFile
 } from '../shared/types';
 
@@ -131,6 +132,23 @@ export class HttpPlatformApi implements FableApi {
     }
 
     return report;
+  }
+
+  // ── Web search ───────────────────────────────────────────────────────────
+
+  async webSearch(query: string): Promise<WebSearchResult> {
+    try {
+      return await this.post<WebSearchResult>('/web/search', { query });
+    } catch (error) {
+      return {
+        query,
+        answer: null,
+        summary: null,
+        sourceUrl: null,
+        related: [],
+        error: error instanceof Error ? error.message : 'web search failed'
+      };
+    }
   }
 
   // ── Persistence (localStorage) ───────────────────────────────────────────

@@ -24,9 +24,13 @@ import dotenv from 'dotenv';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import Groq from 'groq-sdk';
-import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, WorkspaceFile } from '../src/shared/types';
+import https from 'node:https';
+import type { AgentProfile, AnthropicModel, ChatMessage, DebugFinding, DebugReport, WebSearchResult, WorkspaceFile } from '../src/shared/types';
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Also try the project root (when running from compiled dist/server/server/index.js
+// the previous join lands inside dist/, which never holds a .env file).
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 const PORT = Number(process.env.PORT ?? 3333);
@@ -192,6 +196,20 @@ app.post('/workspace/read', filesystemLimiter, async (req: Request, res: Respons
 
     const content = await fs.readFile(target, 'utf8');
     res.json(content);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/web/search', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { query } = req.body as { query: string };
+    if (!query || typeof query !== 'string') {
+      res.status(400).json({ error: 'query is required' });
+      return;
+    }
+    const result = await duckduckgoSearch(query);
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -363,4 +381,49 @@ function addRegexFinding(
 function firstMatchLine(lines: string[], pattern: RegExp): number | undefined {
   const index = lines.findIndex((line) => pattern.test(line));
   return index >= 0 ? index + 1 : undefined;
+}
+
+// ── DuckDuckGo Instant Answers ────────────────────────────────────────────
+
+interface DDGTopic { Text?: string; FirstURL?: string; Topics?: Array<{ Text?: string; FirstURL?: string }> }
+interface DDGResponse { Answer?: string; AbstractText?: string; AbstractURL?: string; RelatedTopics?: DDGTopic[] }
+
+async function duckduckgoSearch(query: string): Promise<WebSearchResult> {
+  const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+  return new Promise<WebSearchResult>((resolve) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'FableCode/0.1' } }, (response) => {
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk: Buffer) => chunks.push(chunk));
+      response.on('end', () => {
+        try {
+          const raw = Buffer.concat(chunks).toString('utf8');
+          const data = JSON.parse(raw) as DDGResponse;
+          const related: Array<{ text: string; url: string }> = [];
+          for (const topic of data.RelatedTopics ?? []) {
+            if (topic.Text && topic.FirstURL) related.push({ text: topic.Text, url: topic.FirstURL });
+            for (const sub of topic.Topics ?? []) {
+              if (sub.Text && sub.FirstURL) related.push({ text: sub.Text, url: sub.FirstURL });
+            }
+            if (related.length >= 8) break;
+          }
+          resolve({
+            query,
+            answer: data.Answer || null,
+            summary: data.AbstractText || null,
+            sourceUrl: data.AbstractURL || null,
+            related: related.slice(0, 8),
+            error: null
+          });
+        } catch (error) {
+          resolve({ query, answer: null, summary: null, sourceUrl: null, related: [], error: error instanceof Error ? error.message : 'parse failed' });
+        }
+      });
+    });
+    req.on('error', (error) => {
+      resolve({ query, answer: null, summary: null, sourceUrl: null, related: [], error: error.message });
+    });
+    req.setTimeout(8000, () => {
+      req.destroy(new Error('DuckDuckGo request timed out'));
+    });
+  });
 }

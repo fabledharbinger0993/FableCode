@@ -62,6 +62,8 @@
     "@capacitor/filesystem": "^7.0.1",
     "@capacitor/ios": "^7.2.0",
     "@capacitor/preferences": "^7.0.1",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@vitejs/plugin-react": "latest",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
@@ -71,7 +73,8 @@
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "^7.15.0"
+    "react-router-dom": "^7.15.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -79,6 +82,7 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/three": "^0.184.1",
     "concurrently": "latest",
     "cross-env": "latest",
     "electron": "latest",

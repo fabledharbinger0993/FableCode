@@ -2228,6 +2228,12 @@ small,
   overflow: hidden;
 }
 
+.design-page {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Override LearnPanel's absolute positioning when inside school-page */
 .school-page .lp-container {
   position: relative;

@@ -8,6 +8,7 @@ import { BuildPage } from './pages/BuildPage';
 import { BlocksPage } from './pages/BlocksPage';
 import { PreviewPage } from './pages/PreviewPage';
 import { SchoolPage } from './pages/SchoolPage';
+import { DesignPage } from './pages/DesignPage';
 import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
             <Route path="/preview" element={<PreviewPage />} />
             <Route path="/blocks" element={<BlocksPage />} />
             <Route path="/school" element={<SchoolPage />} />
+            <Route path="/design" element={<DesignPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

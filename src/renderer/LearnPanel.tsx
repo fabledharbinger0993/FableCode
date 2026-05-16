@@ -167,6 +167,11 @@ export default function LearnPanel({ agent, model, onClose }: Props) {
   const [chatBusy, setChatBusy]             = useState(false);
   const [showLessonHelp, setShowLessonHelp] = useState(false);
   const [showMasterIndex, setShowMasterIndex] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
+  const [showLineByLine, setShowLineByLine] = useState(false);
+  const [consolidationBanner, setConsolidationBanner] = useState(false);
+  const [consolidationMsg, setConsolidationMsg] = useState('');
+  const consolidationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const visibleLessons = LESSONS_BY_RING_MODE[selectedRingId][pacingMode];
   const lesson = visibleLessons[lessonIndex] ?? visibleLessons[0];
@@ -188,7 +193,13 @@ export default function LearnPanel({ agent, model, onClose }: Props) {
     setHtmlCode(next.html ?? '');
     setCssCode(next.css ?? '');
     setShadow(initShadow(next.parameters));
-    setChatMessages(nextChatMessages);
+    setCompletedSteps(new Set());
+    setShowLineByLine(false);
+    const seedMessages: ChatMessage[] = [];
+    if (!next.sandbox && next.teaching?.openingFraming) {
+      seedMessages.push({ role: 'assistant', content: next.teaching.openingFraming });
+    }
+    setChatMessages([...seedMessages, ...nextChatMessages]);
     setShowLessonHelp(false);
     setShowMasterIndex(false);
   }, [visibleLessons]);
@@ -352,6 +363,19 @@ ${css}
     setShowMasterIndex(false);
   }, [lessonIndex, loadLesson]);
 
+  const handleLessonSelect = useCallback((targetIndex: number) => {
+    if (targetIndex !== lessonIndex) {
+      const current = visibleLessons[lessonIndex];
+      if (current?.teaching?.consolidation) {
+        if (consolidationTimerRef.current) clearTimeout(consolidationTimerRef.current);
+        setConsolidationMsg(current.teaching.consolidation);
+        setConsolidationBanner(true);
+        consolidationTimerRef.current = setTimeout(() => setConsolidationBanner(false), 6000);
+      }
+    }
+    loadLesson(targetIndex);
+  }, [lessonIndex, visibleLessons, loadLesson]);
+
   // ─── Render ───────────────────────────────────────────────
   return (
     <div className="lp-container">
@@ -397,7 +421,7 @@ ${css}
               return (
                 <button
                   key={l.id}
-                  onClick={() => loadLesson(i)}
+                  onClick={() => handleLessonSelect(i)}
                   className={`lp-lesson-btn${i === lessonIndex ? ' lp-lesson-btn--active' : ''}`}
                 >
                   {l.sandbox ? '⬡ Sandbox' : `${String(i + 1).padStart(2, '0')}. ${l.title}`}
@@ -409,6 +433,19 @@ ${css}
 
         {/* ── Main content ── */}
         <div className="lp-main">
+          {/* ── Consolidation banner ── */}
+          {consolidationBanner && consolidationMsg && (
+            <div className="lp-consolidation-banner">
+              <span className="lp-consolidation-text">✦ {consolidationMsg}</span>
+              <button
+                type="button"
+                className="lp-consolidation-close"
+                onClick={() => setConsolidationBanner(false)}
+                aria-label="Dismiss consolidation"
+              >×</button>
+            </div>
+          )}
+
           {/* Concept (structured lessons only) */}
           {!lesson.sandbox && (
             <div className="lp-concept-box">
@@ -420,9 +457,52 @@ ${css}
                 </div>
               </div>
               <p className="lp-concept-text">{lesson.concept}</p>
+              {lesson.teaching?.whyItMatters && (
+                <p className="lp-why-it-matters">{lesson.teaching.whyItMatters}</p>
+              )}
+              {lesson.teaching?.predictPrompt && (
+                <p className="lp-predict-prompt">🔮 {lesson.teaching.predictPrompt}</p>
+              )}
               {lesson.next_concept && (
                 <p className="lp-next-concept">Next: {lesson.next_concept}</p>
               )}
+            </div>
+          )}
+
+          {/* ── Walkthrough rail ── */}
+          {!lesson.sandbox && lesson.teaching?.walkthrough && lesson.teaching.walkthrough.length > 0 && (
+            <div className="lp-walkthrough-rail">
+              <p className="lp-walkthrough-title">Walkthrough</p>
+              <ol className="lp-walkthrough-list">
+                {lesson.teaching.walkthrough.map((step, si) => {
+                  const key = `${lessonIndex}:${si}`;
+                  const done = completedSteps.has(key);
+                  return (
+                    <li key={si} className={`lp-walkthrough-step${done ? ' lp-walkthrough-step--done' : ''}`}>
+                      <label className="lp-walkthrough-check-label">
+                        <input
+                          type="checkbox"
+                          className="lp-walkthrough-checkbox"
+                          checked={done}
+                          onChange={() => {
+                            setCompletedSteps(prev => {
+                              const next = new Set(prev);
+                              if (done) next.delete(key); else next.add(key);
+                              return next;
+                            });
+                          }}
+                          aria-label={`Mark step ${si + 1} done`}
+                        />
+                        <span className="lp-walkthrough-instruction">{step.instruction}</span>
+                      </label>
+                      <p className="lp-walkthrough-watch">Watch for: {step.watchFor}</p>
+                      {step.paramHint && (
+                        <span className="lp-walkthrough-param-hint">→ Use the "{step.paramHint}" control</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
           )}
 
@@ -469,8 +549,29 @@ ${css}
               <div className="lp-preview-container">
                 <div className="lp-panel-label lp-panel-label--with-guide">
                   <span>Preview</span>
-                  <HarbingerAvatar size="tiny" canRenderImage={harbingerImageReady} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {lesson.teaching?.lineByLine && lesson.teaching.lineByLine.length > 0 && (
+                      <button
+                        type="button"
+                        className={`lp-explain-btn${showLineByLine ? ' lp-explain-btn--active' : ''}`}
+                        onClick={() => setShowLineByLine(v => !v)}
+                      >
+                        {showLineByLine ? 'Hide code notes' : 'Explain the code'}
+                      </button>
+                    )}
+                    <HarbingerAvatar size="tiny" canRenderImage={harbingerImageReady} />
+                  </div>
                 </div>
+                {showLineByLine && lesson.teaching?.lineByLine && (
+                  <div className="lp-line-by-line">
+                    {lesson.teaching.lineByLine.map((item, li) => (
+                      <div key={li} className="lp-annotated-line">
+                        <code className="lp-annotated-code">{item.code}</code>
+                        <p className="lp-annotated-explanation">{item.explanation}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <iframe
                   key={lessonIndex}
                   className="lp-iframe"

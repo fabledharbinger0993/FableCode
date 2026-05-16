@@ -86,6 +86,28 @@ export interface LessonHelp {
   scenarios: LessonHelpScenario[];
 }
 
+export interface WalkthroughStep {
+  instruction: string;
+  watchFor: string;
+  paramHint?: string;
+}
+
+export interface AnnotatedLine {
+  code: string;
+  explanation: string;
+  target: 'html' | 'css';
+}
+
+export interface LessonTeaching {
+  openingFraming: string;
+  whyItMatters: string;
+  walkthrough: WalkthroughStep[];
+  lineByLine?: AnnotatedLine[];
+  predictPrompt?: string;
+  consolidation: string;
+  misconceptions?: string[];
+}
+
 export interface Ring {
   id: RingId;
   title: string;
@@ -128,6 +150,7 @@ export interface Lesson {
   hints?: string[];
   antiPatterns?: string[];
   help?: LessonHelp;
+  teaching?: LessonTeaching;
 }
 
 export interface WorkspaceFile {

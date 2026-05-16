@@ -9,7 +9,10 @@ import { BlocksPage } from './pages/BlocksPage';
 import { PreviewPage } from './pages/PreviewPage';
 import { SchoolPage } from './pages/SchoolPage';
 import { DesignPage } from './pages/DesignPage';
+import { registerServiceWorker } from './registerServiceWorker';
 import './styles.css';
+
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

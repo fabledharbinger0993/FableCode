@@ -101,3 +101,263 @@
   margin-left: auto;
   letter-spacing: 0.01em;
 }
+
+/* ── Workspace (canvas + props sidebar) ── */
+.dp-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Canvas ── */
+.dp-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.dp-canvas-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Reference image side panel ── */
+.dp-ref-panel {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 220px;
+  background: rgba(17, 20, 28, 0.92);
+  border: 1px solid #3a3d4e;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.dp-ref-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid #262a33;
+  font-size: 11px;
+  color: #9fa8b7;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dp-ref-close {
+  background: transparent;
+  border: none;
+  color: #9fa8b7;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.dp-ref-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+/* ── Properties panel ── */
+.dp-props-panel {
+  width: 220px;
+  flex-shrink: 0;
+  background: rgba(17, 20, 28, 0.98);
+  border-left: 1px solid #262a33;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dp-props-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #262a33;
+  flex-shrink: 0;
+}
+
+.dp-props-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e85dcf;
+}
+
+.dp-props-close {
+  background: transparent;
+  border: none;
+  color: #9fa8b7;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.dp-props-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dp-prop-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a5166;
+  padding: 8px 0 2px;
+  border-top: 1px solid #262a33;
+  margin-top: 4px;
+}
+
+.dp-prop-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dp-prop-group--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dp-prop-label {
+  font-size: 10px;
+  color: #9fa8b7;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.dp-prop-text {
+  background: #0d0f14;
+  border: 1px solid #3a3d4e;
+  border-radius: 5px;
+  color: #dce3ee;
+  font-size: 12px;
+  padding: 4px 7px;
+  outline: none;
+  width: 100%;
+}
+
+.dp-prop-color {
+  width: 100%;
+  height: 28px;
+  border: 1px solid #3a3d4e;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.dp-prop-slider {
+  width: 100%;
+  accent-color: #e85dcf;
+}
+
+.dp-prop-slider-val {
+  font-size: 10px;
+  color: #9fa8b7;
+  text-align: right;
+}
+
+.dp-prop-num {
+  background: #0d0f14;
+  border: 1px solid #3a3d4e;
+  border-radius: 4px;
+  color: #dce3ee;
+  font-size: 11px;
+  padding: 3px 5px;
+  width: 54px;
+  outline: none;
+  text-align: center;
+}
+
+.dp-prop-num--full {
+  width: 100%;
+  text-align: left;
+}
+
+.dp-prop-vec3 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-prop-vec3-label {
+  font-size: 10px;
+  color: #9fa8b7;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.dp-prop-vec3-inputs {
+  display: flex;
+  gap: 4px;
+}
+
+.dp-prop-axis-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  color: #4a5166;
+  flex: 1;
+}
+
+.dp-prop-axis-label input {
+  width: 100%;
+}
+
+/* ── Toolbar extensions ── */
+.dp-toolbar-group {
+  display: flex;
+  gap: 4px;
+}
+
+.dp-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: #262a33;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.dp-tool-btn--danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.dp-tool-btn--danger:hover {
+  background: rgba(248, 113, 113, 0.1);
+  color: #fca5a5;
+}
+
+.dp-tool-btn--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dp-tool-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

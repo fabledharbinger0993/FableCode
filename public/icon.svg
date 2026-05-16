@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FableCode">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a0a2e"/>
+      <stop offset="55%" stop-color="#2a004e"/>
+      <stop offset="100%" stop-color="#08090d"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8e6ff"/>
+      <stop offset="100%" stop-color="#c0a0ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <g fill="none" stroke="url(#ink)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Stylised F -->
+    <path d="M168 116 L168 396"/>
+    <path d="M168 116 L344 116"/>
+    <path d="M168 240 L304 240"/>
+    <!-- Spark above -->
+    <path d="M380 96 L380 152 M352 124 L408 124" stroke-width="22"/>
+  </g>
+</svg>

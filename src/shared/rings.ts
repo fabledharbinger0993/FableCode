@@ -115,7 +115,17 @@ export const RING_1_LESSONS: Lesson[] = [
     parameters: [],
     next_concept: 'Assigning values',
     modePathAvailable: 'both',
-    sandbox: false
+    sandbox: false,
+    teaching: {
+      openingFraming: "Every useful program remembers things. Before we write a single function, we need a place to store a value — and that place is a variable.",
+      whyItMatters: "State is the foundation of every interactive app: your score, your username, whether a menu is open. Without state, a program runs once and immediately forgets everything.",
+      walkthrough: [
+        { instruction: "Read the large '42' in the preview.", watchFor: "That number lives in memory. The preview is just reflecting the value stored in the variable." },
+        { instruction: "Read the concept text: 'Change the value, the program behaves differently.'", watchFor: "This is the key insight: state drives behavior. Same code, different state = different output." },
+        { instruction: "Think: what if the variable held 0 instead of 42?", watchFor: "The preview would show '0'. The structure stays the same; only the stored value changes." }
+      ],
+      consolidation: "State is memory. Programs that remember things can do useful things. Every slider you drag in upcoming lessons changes state.",
+    },
   },
 
   // ─ LOGIC SEED PHASE (lessons 1-4: guided only, first 2 in fast)
@@ -139,7 +149,22 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ x: number }',
       expectedVisibleChanges: ['value updates in preview'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "This is assignment: writing a value into a named slot in memory. The = sign doesn't mean 'equals' — it means 'store this value here'.",
+      whyItMatters: "Every language — Python, JavaScript, Swift — starts here. Give something a name so you can use it later. This one operation is the seed of all computation.",
+      walkthrough: [
+        { instruction: "Drag the 'Value' slider to 50.", watchFor: "The preview updates: x = 50 and 'x is now 50'. The variable and its display are in sync.", paramHint: "Value" },
+        { instruction: "Drag the slider all the way to 0.", watchFor: "x becomes 0. The variable still exists — it just holds zero now." },
+        { instruction: "Drag to 100, then back to 5.", watchFor: "Each drag is a new assignment. The old value disappears; only the latest survives." }
+      ],
+      lineByLine: [
+        { code: "x = ", explanation: "The = is the assignment operator. It writes the value on the right into the variable named on the left.", target: "html" },
+        { code: ".value { color: #0ea5e9", explanation: "Blue visually highlights the variable's current value, making the assignment easy to trace.", target: "css" }
+      ],
+      predictPrompt: "Before you drag, predict: if you set Value to 25, what number will appear in 'x is now ___'?",
+      consolidation: "x = value is the most fundamental operation in programming. You'll write thousands of these, but they all do the same thing: store a value in memory.",
+    },
   },
 
   {
@@ -168,7 +193,22 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ name: string }',
       expectedVisibleChanges: ['text value updates'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "Variables can hold text, not just numbers. In Python, text (called a string) always goes inside quotes — that's how the interpreter knows it's data, not a command.",
+      whyItMatters: "Apps store names, messages, URLs, and labels as strings. The quotes aren't decoration — they tell the interpreter 'treat this as data, not as a keyword'.",
+      walkthrough: [
+        { instruction: "Select 'Jordan' from the dropdown.", watchFor: "The preview shows name = \"Jordan\". The string value updated just like a number would.", paramHint: "Text value" },
+        { instruction: "Select 'Taylor', then 'Casey'.", watchFor: "Each selection reassigns name. The green color marks the string content." },
+        { instruction: "Notice the quotes around the name in the code.", watchFor: "Without quotes, Python would think 'Alex' is a variable name, not a value. Quotes create string data." }
+      ],
+      lineByLine: [
+        { code: 'name = ', explanation: "Same assignment operator as numbers. Left side is the variable name; right side is the string value wrapped in quotes.", target: "html" },
+        { code: ".str { color: #16a34a", explanation: "Green conventionally marks string literals — helps you visually distinguish string data from numeric data at a glance.", target: "css" }
+      ],
+      predictPrompt: "If you pick 'Casey', what text will appear inside the quotes in the preview?",
+      consolidation: "Strings are text wrapped in quotes. Variables can hold any type: numbers, strings, booleans. The assignment operator works identically for all of them.",
+    },
   },
 
   {
@@ -192,7 +232,21 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ x: number, before: number }',
       expectedVisibleChanges: ['old value fades', 'new value highlights'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "Assignment doesn't just create values — it overwrites them. After x = 5 and then x = 10, the 5 is gone. This overwrite is called a state transition.",
+      whyItMatters: "Every time a user clicks a button that changes something on screen — a like count, a form field, a toggle — a state transition is happening. This lesson is that exact mechanism.",
+      walkthrough: [
+        { instruction: "Drag 'New value' to 75.", watchFor: "The preview shows x started as 5, now is 75. The old value is visually crossed out.", paramHint: "New value" },
+        { instruction: "Drag 'New value' back to 5.", watchFor: "Now old and new are the same. A state transition happened — just to the same value." },
+        { instruction: "Drag to 0 and think: where did 10 go?", watchFor: "It's gone. Assignment doesn't save history — it replaces. The old value no longer exists in memory." }
+      ],
+      lineByLine: [
+        { code: ".old { color: #ef4444; opacity: 0.6; text-decoration: line-through", explanation: "Red strikethrough shows the previous value. In real memory, this value simply no longer exists — the visual is a teaching metaphor.", target: "css" },
+        { code: ".new { color: #3b82f6", explanation: "Blue highlights the current (winning) value. After the second assignment, only this value remains in the variable.", target: "css" }
+      ],
+      consolidation: "State transition: an old value gets replaced by a new one. The variable still exists — only its contents changed. This is the core of all interactive programming.",
+    },
   },
 
   {
@@ -215,7 +269,22 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ x: number, double: number }',
       expectedVisibleChanges: ['x updates', 'double updates automatically'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "Variables can be computed from other variables. double = x * 2 creates a new value by reading x and applying math. Change x and double follows automatically.",
+      whyItMatters: "Derived values are everywhere: a total price from quantity × unit cost, a progress percentage from completed/total. This pattern — reactive state — underpins spreadsheets, React hooks, and database views.",
+      walkthrough: [
+        { instruction: "Drag 'x value' to 10.", watchFor: "x is 10, double is 20. Both values changed — you only moved one slider.", paramHint: "x value" },
+        { instruction: "Drag 'x value' to 1.", watchFor: "x is 1, double is 2. The relationship x * 2 holds for every value of x." },
+        { instruction: "Drag 'x value' to 50.", watchFor: "x is 50, double is 100. The derivation is consistent and automatic — no extra code needed." }
+      ],
+      lineByLine: [
+        { code: "double = x * 2", explanation: "Python reads x, multiplies by 2, stores the result in a new variable called double. This creates a live dependency between x and double.", target: "html" },
+        { code: ".derived { color: #8b5cf6", explanation: "Purple marks derived values — visually separate from source variables to show they come from computation, not direct assignment.", target: "css" }
+      ],
+      predictPrompt: "If you set x to 7, what will double be? Figure it out before you drag.",
+      consolidation: "Derived state is computed state. Define the relationship once and it always holds. This is the basis of formulas, computed properties, and reactive UIs.",
+    },
   },
 
   // ─ VISUAL ECHO PHASE (lessons 5-7: guided, first visual in fast)
@@ -247,7 +316,21 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ [varName]: number }',
       expectedVisibleChanges: ['block displays set operation', 'result shows assigned value'],
       parityCheckRule: 'semantic'
-    }
+    },
+    teaching: {
+      openingFraming: "The SET VALUE block does exactly what x = 5 does in code — it's the same assignment operation rendered as a visual node. Understanding both forms is the goal of this ring.",
+      whyItMatters: "Visual tools like Scratch, Zapier, and no-code builders all represent assignment as a 'set' block. Knowing both representations makes you fluent across every kind of programming tool.",
+      walkthrough: [
+        { instruction: "Change 'Variable name' to 'score'.", watchFor: "The block now shows 'name: score'. The variable name is configurable, just like picking a name in code.", paramHint: "Variable name" },
+        { instruction: "Drag 'Value' to 99.", watchFor: "The block shows 'value: 99'. SET score = 99 in the block is exactly score = 99 in Python.", paramHint: "Value" },
+        { instruction: "Compare mentally to Lesson 1 (r1_logic_01): same operation, different form.", watchFor: "SET block with name=count, value=5 is EXACTLY count = 5 in Python. Different syntax, identical semantics." }
+      ],
+      lineByLine: [
+        { code: "SET VALUE", explanation: "This block title names the operation. In code, this operation is the = assignment operator.", target: "html" },
+        { code: ".block { background: #3b82f6", explanation: "Blue identifies SET/assignment blocks. Color-coding by operation type is standard in visual programming languages.", target: "css" }
+      ],
+      consolidation: "SET block = assignment. One is text; one is a node. They're the same program written in two different languages. Ring 1 trains you to see this parity automatically.",
+    },
   },
 
   {
@@ -272,7 +355,21 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ x: number, before: number }',
       expectedVisibleChanges: ['flow shows set then update', 'result displays transition'],
       parityCheckRule: 'semantic'
-    }
+    },
+    teaching: {
+      openingFraming: "The UPDATE block represents reassignment: it reads an existing variable and overwrites it. The flow shows SET then UPDATE — the temporal sequence of two state transitions.",
+      whyItMatters: "In block-based systems, UPDATE is how you model 'state change over time': a score going up, a health bar going down, a counter incrementing. Every interactive feature needs this.",
+      walkthrough: [
+        { instruction: "Drag 'New value' to 50.", watchFor: "The UPDATE block changes to x = 50. The flow shows: first x was 5 (SET), now it becomes 50 (UPDATE).", paramHint: "New value" },
+        { instruction: "Look at the arrow between SET and UPDATE.", watchFor: "The arrow shows sequence: SET runs first, then UPDATE reads the variable SET created. Order matters." },
+        { instruction: "Compare to r1_logic_03: x = 5 then x = 10 in code.", watchFor: "Identical logic. Two assignment lines in code = SET block then UPDATE block in the visual canvas." }
+      ],
+      lineByLine: [
+        { code: ".block.update-value { background: #8b5cf6", explanation: "Purple distinguishes UPDATE from SET. Both are assignment, but UPDATE implies 'this variable already exists and we're changing it'.", target: "css" },
+        { code: ".arrow", explanation: "The down arrow represents execution order. Visual programs read top-to-bottom, exactly like code does.", target: "css" }
+      ],
+      consolidation: "SET creates, UPDATE overwrites. Two nodes, two moments in time. This temporal sequence is how all mutable programs work — from counters to game state to form fields.",
+    },
   },
 
   {
@@ -296,7 +393,22 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ x: number, derived: number }',
       expectedVisibleChanges: ['derive block executes', 'derived value appears in result'],
       parityCheckRule: 'semantic'
-    }
+    },
+    teaching: {
+      openingFraming: "The DERIVE block computes a new value from an existing one — it's the visual form of double = x * 2. The arrow from SET to DERIVE shows the dependency explicitly.",
+      whyItMatters: "In data pipelines, formulas, and reactive UIs, derived values are everywhere. The visual representation makes the dependency graph visible — you can see which block feeds which.",
+      walkthrough: [
+        { instruction: "Drag 'Multiplier' to 5.", watchFor: "The DERIVE block shows 'double = x * 5'. The formula updates dynamically.", paramHint: "Multiplier" },
+        { instruction: "Drag 'Multiplier' to 1.", watchFor: "double = x * 1, so double equals x. When multiplier is 1, derived equals source." },
+        { instruction: "Trace the dependency: SET x → DERIVE double.", watchFor: "DERIVE can only run after SET x. This is a dependency graph — the foundation of spreadsheets and reactive frameworks." }
+      ],
+      lineByLine: [
+        { code: ".block.derive { background: #ec4899", explanation: "Pink marks DERIVE blocks — computed values that depend on other variables. A different color signals a different operation type.", target: "css" },
+        { code: "double = x * 2", explanation: "The DERIVE block's formula. It reads x (from the block above) and multiplies. You can change the formula to any computation.", target: "html" }
+      ],
+      predictPrompt: "If multiplier is 3 and x = 5, what will double be before you drag?",
+      consolidation: "DERIVE = formula. SET feeds data in; DERIVE computes new data from it. This producer→consumer pattern is the backbone of spreadsheets, React computed state, and SQL views.",
+    },
   },
 
   // ─ TRANSLATION PHASE (lessons 8-10: both paths)
@@ -318,7 +430,17 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ count: number, display: string }',
       expectedVisibleChanges: ['blocks execute in sequence', 'final state matches code output'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "Translation is the skill of moving between two representations of the same program. Given code, can you build the equivalent block flow? That's what this lesson tests.",
+      whyItMatters: "Real developers switch between mental models constantly: reading code, sketching diagrams, using visual tools. Translation fluency means you're never locked into one representation.",
+      walkthrough: [
+        { instruction: "Read the given Python code: count = 0, count = count + 1, display = ...", watchFor: "Identify the three operations: SET count, UPDATE count, DERIVE display." },
+        { instruction: "Map each code line to a block type: SET, UPDATE, DERIVE.", watchFor: "count = 0 is SET. count = count + 1 is UPDATE. display = '...' + str(count) is DERIVE. Three blocks." },
+        { instruction: "Read the hint: 'three blocks needed. Start with SET, then UPDATE, then DERIVE.'", watchFor: "This is the translation recipe. One line of code → one block. Code order = block order." }
+      ],
+      consolidation: "Code-to-blocks translation works line-by-line: each statement maps to exactly one block. The order in code equals the order of blocks in the flow. Practice until it's automatic.",
+    },
   },
 
   {
@@ -339,7 +461,17 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ status: string, message: string }',
       expectedVisibleChanges: ['code state matches block state'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "Now reverse direction: given a block flow, write the Python code. The block structure tells you everything — the operation type, the variable name, the formula.",
+      whyItMatters: "Reading a visual diagram and writing equivalent code is a professional skill used when reading architecture diagrams, translating pseudocode, or porting between tools and languages.",
+      walkthrough: [
+        { instruction: "Read the block flow: SET status = 'ready', then DERIVE message = 'Status: ' + status.", watchFor: "Two blocks, two code lines. SET block → direct assignment. DERIVE block → computed assignment." },
+        { instruction: "Write the first line: what Python creates status = 'ready'?", watchFor: "status = \"ready\" — variable name from the block's left side, value from the block's right side." },
+        { instruction: "Write the second line: message from status.", watchFor: "message = \"Status: \" + status — the formula from the DERIVE block written as Python string concatenation." }
+      ],
+      consolidation: "Block-to-code translation: read the block type (SET/DERIVE), read the variable name, read the formula. Each block becomes one line of Python. Same semantics, different syntax.",
+    },
   },
 
   {
@@ -360,7 +492,21 @@ export const RING_1_LESSONS: Lesson[] = [
       expectedStateShape: '{ x: number, y: number }',
       expectedVisibleChanges: ['mismatch identified', 'correction applied', 'parity achieved'],
       parityCheckRule: 'exact'
-    }
+    },
+    teaching: {
+      openingFraming: "A mismatch means two representations claim to run the same program but produce different results. Your job: find the divergence point and fix it.",
+      whyItMatters: "Debugging mismatches between code and specification — or between test expectation and actual output — is a core daily skill. The approach is always: trace the values, find where they first diverge.",
+      walkthrough: [
+        { instruction: "Read the code version: x = 10, y = x * 2. Result: y = 20.", watchFor: "Code is correct. x is 10. y should be 20." },
+        { instruction: "Read the block version: SET x = 5, DERIVE y = x * 2. Result: y = 10.", watchFor: "Bug is in the SET block: x = 5 instead of x = 10. The wrong initial value propagated through the derivation." },
+        { instruction: "Identify the fix: change SET x from 5 to 10.", watchFor: "When x = 10 in the block, y = 20. Both versions agree. Parity restored." }
+      ],
+      misconceptions: [
+        "Don't fix the DERIVE block — y = x * 2 is correct. The formula is fine; the input is wrong.",
+        "Mismatches almost always live in the inputs or initial values, not the transformation logic."
+      ],
+      consolidation: "Debugging a mismatch: trace both versions with the same inputs, find where values first differ, fix that point. The downstream code is usually correct.",
+    },
   },
 
   // ─ SYNTHESIS PHASE (lessons 11-12: both paths)
@@ -378,6 +524,16 @@ export const RING_1_LESSONS: Lesson[] = [
     parameters: [],
     next_concept: 'Ring finale',
     modePathAvailable: 'both',
+    teaching: {
+      openingFraming: "Synthesis means running both representations simultaneously and keeping them in sync. This is the hardest skill in Ring 1 — and also the most powerful.",
+      whyItMatters: "In real projects, you maintain a mental model (the blocks), write the code, and verify they match. Any divergence is a bug. This lesson trains that verification discipline directly.",
+      walkthrough: [
+        { instruction: "Look at the counter display. Note the Count and Status values.", watchFor: "These are derived from state: count drives status. State drives the entire display." },
+        { instruction: "Trace the code path: count starts at 0, status is 'INIT'. What changes count?", watchFor: "The increment buttons. Each is a state transition: count = count + 1." },
+        { instruction: "Trace the block path: the block flow mirrors the code.", watchFor: "If code does count += 1, the block has an UPDATE count node. Same operation, both forms, always in sync." }
+      ],
+      consolidation: "Synthesis: code and blocks express the same program. When they diverge, something is wrong. Verifying that both forms agree is what separates careful programmers from careless ones.",
+    },
     previewContract: {
       expectedStateShape: '{ count: number, status: string, syncStatus: "matched" | "diverged" }',
       expectedVisibleChanges: [
@@ -409,6 +565,20 @@ export const RING_1_LESSONS: Lesson[] = [
     next_concept: null,
     modePathAvailable: 'both',
     isFinale: true,
+    teaching: {
+      openingFraming: "This is the capstone. Everything from Ring 1 — assignment, state transition, derived values, and translation — comes together in one interactive panel.",
+      whyItMatters: "A counter panel is the simplest stateful UI. Every app has something more complex: shopping carts, game scores, settings panels. Master this and you have the foundation for all of them.",
+      walkthrough: [
+        { instruction: "Drag 'Initial count' and watch the panel update.", watchFor: "The count value, the status text ('LOW', 'MODERATE', 'HIGH'), and colors all react to one variable.", paramHint: "Initial count" },
+        { instruction: "Drag the threshold sliders to change when status transitions.", watchFor: "Thresholds define conditional boundaries — this previews Ring 2 (branching).", paramHint: "Status threshold (low)" },
+        { instruction: "Change the Accent color and watch all blue elements update.", watchFor: "One color variable drives multiple UI elements — single-source state drives consistent presentation.", paramHint: "Accent color" }
+      ],
+      lineByLine: [
+        { code: "background: linear-gradient(135deg, #3b82f6, #1e40af)", explanation: "The header gradient uses the ring blue as its anchor. A state-driven version would compute both color stops from a single accent variable.", target: "css" },
+        { code: ".value { margin: 0; font-size: 32px; font-weight: 800; color: #3b82f6", explanation: "The count display uses the same blue as the header — visual consistency across components, driven by a single shared color value.", target: "css" }
+      ],
+      consolidation: "Ring 1 complete. Assignment, state transition, derived values, translation, debugging, synthesis — you have the full state vocabulary. Ring 2 adds decisions: if this state, take this path.",
+    },
     previewContract: {
       expectedStateShape: '{ count: number, status: "low" | "moderate" | "high", codeState: number, blockState: number, parity: boolean }',
       expectedVisibleChanges: [

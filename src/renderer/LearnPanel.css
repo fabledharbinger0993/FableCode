@@ -817,3 +817,184 @@
     order: 2;
   }
 }
+
+/* ─── Teacher Layer ─────────────────────────────────────── */
+
+.lp-consolidation-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, rgba(236, 72, 153, 0.18), rgba(236, 72, 153, 0.06));
+  border: 1px solid rgba(236, 72, 153, 0.45);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.lp-consolidation-text {
+  flex: 1;
+  font-size: 13px;
+  color: #fbcfe8;
+  line-height: 1.55;
+}
+
+.lp-consolidation-close {
+  background: transparent;
+  border: none;
+  color: #ec4899;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.lp-why-it-matters {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: #94a3b8;
+  line-height: 1.55;
+  border-left: 2px solid rgba(236, 72, 153, 0.5);
+  padding-left: 8px;
+}
+
+.lp-predict-prompt {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #a5b4fc;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.lp-walkthrough-rail {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.lp-walkthrough-title {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ec4899;
+}
+
+.lp-walkthrough-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lp-walkthrough-step {
+  padding: 8px 10px;
+  background: #0d1117;
+  border-radius: 7px;
+  border: 1px solid #21262d;
+}
+
+.lp-walkthrough-step--done {
+  opacity: 0.55;
+  border-color: rgba(236, 72, 153, 0.3);
+}
+
+.lp-walkthrough-step--done .lp-walkthrough-instruction {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+.lp-walkthrough-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.lp-walkthrough-checkbox {
+  margin-top: 2px;
+  accent-color: #ec4899;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.lp-walkthrough-instruction {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+
+.lp-walkthrough-watch {
+  margin: 5px 0 0 22px;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.lp-walkthrough-param-hint {
+  display: block;
+  margin: 4px 0 0 22px;
+  font-size: 10px;
+  color: #6366f1;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.lp-explain-btn {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.lp-explain-btn--active {
+  border-color: rgba(236, 72, 153, 0.6);
+  color: #f9a8d4;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.lp-line-by-line {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid #21262d;
+}
+
+.lp-annotated-line {
+  background: #0d1117;
+  border-radius: 6px;
+  padding: 7px 10px;
+  border-left: 2px solid rgba(99, 102, 241, 0.5);
+}
+
+.lp-annotated-code {
+  display: block;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 11px;
+  color: #a5b4fc;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.lp-annotated-explanation {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.55;
+}

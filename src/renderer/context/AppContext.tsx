@@ -4,11 +4,11 @@ import { DEFAULT_AGENT_ID } from '../../shared/agents';
 
 interface AppContextValue {
   agentId: AgentId;
-  setAgentId: (id: AgentId) => void;
+  setAgentId: React.Dispatch<React.SetStateAction<AgentId>>;
   model: string;
-  setModel: (m: string) => void;
+  setModel: React.Dispatch<React.SetStateAction<string>>;
   models: AnthropicModel[];
-  setModels: (m: AnthropicModel[]) => void;
+  setModels: React.Dispatch<React.SetStateAction<AnthropicModel[]>>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);

@@ -2241,3 +2241,83 @@ small,
   z-index: auto;
   height: 100%;
 }
+
+/* ─── iPad / touch device polish ─────────────────────────────────────────
+   Applied only on coarse-pointer devices so the desktop Electron experience
+   keeps its dense, mouse-tuned layout untouched.
+*/
+
+/* Remove the iOS 300ms tap delay and the grey tap-flash on every control. */
+button,
+select,
+a,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent rubber-band scroll from leaking into the page when an inner
+   scroll container hits its top/bottom. Apply to every scroll surface. */
+.app-shell,
+.app-shell *[class*="panel"],
+.app-shell *[class*="scroll"],
+.app-shell *[class*="list"] {
+  overscroll-behavior: contain;
+}
+
+@media (pointer: coarse) {
+  /* iOS HIG minimum touch target: 44×44 pt. */
+  button,
+  select,
+  [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Inputs benefit too, especially in the sidebar. */
+  input[type="text"],
+  input[type="search"],
+  input[type="url"],
+  input[type="number"],
+  select {
+    min-height: 44px;
+    font-size: 16px; /* 16px prevents iOS Safari auto-zoom on focus */
+  }
+
+  /* Chrome (sidebar / topbar) shouldn't trigger text selection on long-press.
+     Editor / content surfaces opt back in below. */
+  .app-shell,
+  .app-shell nav,
+  .app-shell header,
+  .app-shell aside {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Anywhere the user reads or edits text, keep selection enabled. */
+  textarea,
+  input,
+  pre,
+  code,
+  .lp-container,
+  [contenteditable="true"],
+  [class*="editor"],
+  [class*="output"],
+  [class*="message"],
+  [class*="lesson"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* When launched as a standalone PWA (Add to Home Screen), Safari hides its
+   chrome — make sure the body fills the full screen and respects the home
+   indicator. The safe-area-inset vars already cover most of this. */
+@media (display-mode: standalone) {
+  body {
+    /* Use 100svh on Safari 15+ so the layout never jumps when chrome appears. */
+    min-height: 100svh;
+  }
+}
+

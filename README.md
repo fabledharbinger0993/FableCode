@@ -1,8 +1,19 @@
-# FableCode
+# FabledLabs (formerly FableCode)
 
-FableCode is a local-first desktop coding workbench built with Electron, React, TypeScript, Conda, and Ollama. It is designed as an original app inspired by modern AI coding environments while avoiding proprietary code, assets, or cloned UI from Windsurf.
+FabledLabs is a local-first desktop platform built with Electron, React, TypeScript, Conda, and Ollama. The existing FableCode app is being split into four focused products:
+
+- FabledLabs: Alkemist
+- FabledLabs: Scribe
+- FabledLabs: Tesseract
+- FabledLabs: Logix
+
+This migration keeps current functionality live while establishing clearer product boundaries for faster iteration.
 
 ## What It Includes
+
+- Product split plan and migration backlog:
+	- `docs/fabledlabs-split-plan.md`
+	- `docs/fabledlabs-migration-backlog.md`
 
 - Electron webview-style desktop shell with a Vite React renderer.
 - Ollama HTTP integration through the Electron main process.

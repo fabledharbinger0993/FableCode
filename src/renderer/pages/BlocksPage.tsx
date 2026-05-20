@@ -23,6 +23,13 @@ import {
 } from 'lucide-react';
 import { AGENT_PROFILES } from '../../shared/agents';
 import { getPlatformApi } from '../../platform';
+import {
+  LOGIX_BLOCK_TEMPLATES,
+  createLogixBlock,
+  createLogixStarterFlow,
+  templateForLogixKind,
+  validateLogixFlow
+} from '../labs/logix';
 import type {
   ChatMessage,
   FableApi,
@@ -37,139 +44,6 @@ import { useAppContext } from '../context/AppContext';
 // ─── Platform API ────────────────────────────────────────────
 const platformApi = getPlatformApi();
 function fableApi(): FableApi { return platformApi; }
-
-// ─── Flow helpers (same as App.tsx) ─────────────────────────
-const makeFlowId = () => `flow-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-const makeBlockId = (kind: FlowBlockKind) => `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-
-type SandboxTemplate = Omit<FlowBlock, 'id' | 'position' | 'suggestedBy'> & { accent: string };
-
-const port = (id: string, name: string, kind: 'input' | 'output', dataType: FlowBlock['inputs'][number]['dataType']) => ({
-  id, name, kind, dataType
-});
-
-const sandboxBlockTemplates: SandboxTemplate[] = [
-  {
-    kind: 'trigger', title: 'Intent Trigger',
-    description: 'Starts the builder flow from a user goal, file change, schedule, or manual run.',
-    instructions: 'Capture the goal and normalize it into a compact build brief.',
-    tags: ['entry', 'goal'], accent: '#31caff',
-    inputs: [], outputs: [port('brief', 'Brief', 'output', 'text')]
-  },
-  {
-    kind: 'agent', title: 'Agent Reasoning',
-    description: 'Delegates planning, review, or implementation reasoning to the selected FableCode agent.',
-    instructions: 'Use the active agent profile and local context to produce the next build decision.',
-    tags: ['copilot', 'agent'], accent: '#e05a47',
-    inputs: [port('context', 'Context', 'input', 'text')],
-    outputs: [port('decision', 'Decision', 'output', 'decision')]
-  },
-  {
-    kind: 'tool', title: 'Toolkit Action',
-    description: 'Calls into DJMT, VS Code, GitHub, browser automation, cloud, database, or test tooling.',
-    instructions: 'Choose the least risky local tool and report exact inputs and outputs.',
-    tags: ['toolchain', 'skills'], accent: '#2f8f83',
-    inputs: [port('request', 'Request', 'input', 'text')],
-    outputs: [port('result', 'Result', 'output', 'json')]
-  },
-  {
-    kind: 'condition', title: 'Route Gate',
-    description: 'Branches the pathway based on pass/fail checks, user choice, confidence, or missing context.',
-    instructions: 'Evaluate the prior result and choose one clearly labeled route.',
-    tags: ['branch', 'decision'], accent: '#b66a1f',
-    inputs: [port('signal', 'Signal', 'input', 'decision')],
-    outputs: [port('pass', 'Pass', 'output', 'decision'), port('fallback', 'Fallback', 'output', 'decision')]
-  },
-  {
-    kind: 'function', title: 'Function Draft',
-    description: 'Defines a reusable function, command wrapper, schema transform, or prompt utility.',
-    instructions: 'Draft the function signature, inputs, output contract, and verification notes.',
-    tags: ['code', 'function'], accent: '#4f6bed',
-    inputs: [port('spec', 'Spec', 'input', 'text')],
-    outputs: [port('function', 'Function', 'output', 'text')]
-  },
-  {
-    kind: 'memory', title: 'Holograim Recall',
-    description: 'Pulls session memory, durable references, and prior decisions into the active pathway.',
-    instructions: 'Query memory for constraints, previous decisions, and reference paths relevant to this block.',
-    tags: ['memory', 'context'], accent: '#b45cff',
-    inputs: [port('query', 'Query', 'input', 'text')],
-    outputs: [port('memory', 'Memory', 'output', 'memory')]
-  },
-  {
-    kind: 'file', title: 'Workspace File',
-    description: 'Reads or stages file context from the selected workspace for the agent or tool chain.',
-    instructions: 'Select the relevant file set and summarize only the context needed downstream.',
-    tags: ['workspace', 'files'], accent: '#9edfff',
-    inputs: [port('path', 'Path', 'input', 'file')],
-    outputs: [port('content', 'Content', 'output', 'text')]
-  },
-  {
-    kind: 'terminal', title: 'Terminal Check',
-    description: 'Runs a build, test, lint, or setup command through the local development toolchain.',
-    instructions: 'Specify command, working directory, expected signal, and failure recovery path.',
-    tags: ['verify', 'terminal'], accent: '#c6f36d',
-    inputs: [port('command', 'Command', 'input', 'command')],
-    outputs: [port('output', 'Output', 'output', 'text')]
-  },
-  {
-    kind: 'approval', title: 'Human Approval',
-    description: 'Pauses the pathway for a user decision before risky edits, deletes, deploys, or commits.',
-    instructions: 'Ask one concise approval question and list the concrete action that will follow.',
-    tags: ['gate', 'human'], accent: '#ffd166',
-    inputs: [port('request', 'Request', 'input', 'text')],
-    outputs: [port('approved', 'Approved', 'output', 'decision')]
-  },
-  {
-    kind: 'output', title: 'Delivery Output',
-    description: 'Packages the final answer, artifact, commit summary, or deployment handoff.',
-    instructions: 'Produce the final user-facing result and include verification status.',
-    tags: ['finish', 'handoff'], accent: '#ff6b9e',
-    inputs: [port('result', 'Result', 'input', 'any')],
-    outputs: []
-  }
-];
-
-function templateForKind(kind: FlowBlockKind): SandboxTemplate {
-  return sandboxBlockTemplates.find((t) => t.kind === kind) ?? sandboxBlockTemplates[0];
-}
-
-function createSandboxBlock(
-  template: SandboxTemplate,
-  position: FlowBlock['position'],
-  suggestedBy: FlowBlock['suggestedBy'] = 'user'
-): FlowBlock {
-  return {
-    id: makeBlockId(template.kind),
-    kind: template.kind, title: template.title, description: template.description,
-    instructions: template.instructions, position,
-    inputs: template.inputs, outputs: template.outputs, tags: template.tags, suggestedBy
-  };
-}
-
-function createStarterFlow(): FlowDefinition {
-  const trigger = createSandboxBlock(templateForKind('trigger'), { x: 54, y: 96 }, 'system');
-  const agentBlock = createSandboxBlock(templateForKind('agent'), { x: 330, y: 84 }, 'system');
-  const toolBlock = createSandboxBlock(templateForKind('tool'), { x: 622, y: 150 }, 'system');
-  const outputBlock = createSandboxBlock(templateForKind('output'), { x: 914, y: 108 }, 'system');
-  return {
-    id: makeFlowId(),
-    name: 'Builder Copilot Pathway',
-    goal: 'Turn an app idea into a routed implementation plan with agent help, local tooling, and verification gates.',
-    blocks: [trigger, agentBlock, toolBlock, outputBlock],
-    routes: [
-      { id: `route-${trigger.id}-${agentBlock.id}`, fromBlockId: trigger.id, fromPortId: 'brief', toBlockId: agentBlock.id, toPortId: 'context', label: 'brief to agent', kind: 'default' },
-      { id: `route-${agentBlock.id}-${toolBlock.id}`, fromBlockId: agentBlock.id, fromPortId: 'decision', toBlockId: toolBlock.id, toPortId: 'request', label: 'tool action', kind: 'ai-selected' },
-      { id: `route-${toolBlock.id}-${outputBlock.id}`, fromBlockId: toolBlock.id, fromPortId: 'result', toBlockId: outputBlock.id, toPortId: 'result', label: 'verified output', kind: 'success' }
-    ],
-    suggestions: [
-      { id: 'suggest-memory', title: 'Add recall before planning', detail: 'Pull Holograim memory into the pathway before the reasoning block.', blockKind: 'memory', routeKind: 'default' },
-      { id: 'suggest-approval', title: 'Gate risky actions', detail: 'Insert a human approval block before terminal, deploy, delete, or commit actions.', blockKind: 'approval', routeKind: 'manual-approval' },
-      { id: 'suggest-condition', title: 'Branch after verification', detail: 'Split success and fallback routes from a test or build check.', blockKind: 'condition', routeKind: 'condition' }
-    ],
-    updatedAt: new Date().toISOString()
-  };
-}
 
 function flowBlockIcon(kind: FlowBlockKind) {
   switch (kind) {
@@ -223,7 +97,7 @@ function ConversationView({
     return (
       <div className="empty-state">
         <ShieldCheck size={30} aria-hidden="true" />
-        <h3>Grid Sandbox</h3>
+        <h3>Logix Chain</h3>
         <p>{selectedFile ? `Selected block: ${selectedFile}` : 'Add blocks and routes, then ask the copilot.'}</p>
       </div>
     );
@@ -252,10 +126,10 @@ export function BlocksPage() {
     [agentId]
   );
 
-  const [sandboxFlow, setSandboxFlow] = useState<FlowDefinition>(() => createStarterFlow());
+  const [sandboxFlow, setSandboxFlow] = useState<FlowDefinition>(() => createLogixStarterFlow());
   const [selectedSandboxBlockId, setSelectedSandboxBlockId] = useState('');
   const [sandboxMessages, setSandboxMessages] = useState<ChatMessage[]>([]);
-  const [sandboxPrompt, setSandboxPrompt] = useState('Suggest the next block and route for this builder flow.');
+  const [sandboxPrompt, setSandboxPrompt] = useState('Suggest the next node and route for this Logix chain.');
   const [sandboxBusy, setSandboxBusy] = useState(false);
   const [toolkits] = useState<ToolkitSummary | null>(null);
   const [copiedKey, setCopiedKey] = useState('');
@@ -263,6 +137,8 @@ export function BlocksPage() {
   const selectedSandboxBlock = useMemo(() => {
     return sandboxFlow.blocks.find((b) => b.id === selectedSandboxBlockId) ?? sandboxFlow.blocks[0] ?? null;
   }, [sandboxFlow.blocks, selectedSandboxBlockId]);
+
+  const logixIssues = useMemo(() => validateLogixFlow(sandboxFlow), [sandboxFlow]);
 
   const sandboxContext = useMemo(() => {
     const selected = selectedSandboxBlock
@@ -275,15 +151,19 @@ export function BlocksPage() {
       .slice(0, 10)
       .map((c) => `${c.name} (${c.status})`)
       .join(', ');
+    const validationList = logixIssues.length > 0
+      ? logixIssues.slice(0, 8).map((issue) => `${issue.severity}: ${issue.title} - ${issue.detail}`).join('\n')
+      : 'No Logix validation issues.';
     return [
       `Flow: ${sandboxFlow.name}`,
       `Goal: ${sandboxFlow.goal}`,
       `Selected block: ${selected}`,
       `Blocks: ${blockList}`,
       routeList ? `Routes:\n${routeList}` : 'Routes: none yet',
+      `Validation:\n${validationList}`,
       capabilityList ? `Available devtool skills: ${capabilityList}` : ''
     ].filter(Boolean).join('\n');
-  }, [sandboxFlow, selectedSandboxBlock, toolkits]);
+  }, [sandboxFlow, selectedSandboxBlock, toolkits, logixIssues]);
 
   function mutateSandboxFlow(updater: (flow: FlowDefinition) => FlowDefinition) {
     setSandboxFlow((current) => ({
@@ -293,9 +173,9 @@ export function BlocksPage() {
   }
 
   function addSandboxBlock(kind: FlowBlockKind, suggestedBy: FlowBlock['suggestedBy'] = 'user') {
-    const template = templateForKind(kind);
+    const template = templateForLogixKind(kind);
     const offset = sandboxFlow.blocks.length * 42;
-    const newBlock = createSandboxBlock(template, {
+    const newBlock = createLogixBlock(template, {
       x: 86 + (offset % 520),
       y: 300 + (offset % 220)
     }, suggestedBy);
@@ -386,7 +266,7 @@ export function BlocksPage() {
     if (!model.trim()) return;
     const nextMessages: ChatMessage[] = [...sandboxMessages, { role: 'user', content: trimmed }];
     const flowPrompt = buildModelPrompt(trimmed, [
-      'Grid Sandbox context:',
+      'Logix chain context:',
       sandboxContext,
       'Respond as a builder-copilot for a visual block workflow. Suggest concrete blocks, route labels, function signatures, and verification gates. Keep the answer actionable.'
     ]);
@@ -398,7 +278,7 @@ export function BlocksPage() {
         model: model.trim(),
         temperature: Math.min(agent.temperature + 0.05, 0.9),
         messages: [
-          { role: 'system', content: `${agent.systemPrompt}\nYou are also operating inside FableCode Grid Sandbox, a visual builder for app, agent, tool, and verification flows.` },
+          { role: 'system', content: `${agent.systemPrompt}\nYou are also operating inside FabledLabs: Logix, a visual logic-chain builder for blocks, routes, validation gates, and reusable execution patterns.` },
           ...sandboxMessages.slice(-8),
           { role: 'user', content: flowPrompt }
         ]
@@ -412,11 +292,11 @@ export function BlocksPage() {
   }
 
   function resetSandboxFlow() {
-    const nextFlow = createStarterFlow();
+    const nextFlow = createLogixStarterFlow();
     setSandboxFlow(nextFlow);
     setSelectedSandboxBlockId(nextFlow.blocks[0]?.id ?? '');
     setSandboxMessages([]);
-    setSandboxPrompt('Suggest the next block and route for this builder flow.');
+    setSandboxPrompt('Suggest the next node and route for this Logix chain.');
   }
 
   async function copyText(text: string, key: string) {
@@ -473,9 +353,9 @@ export function BlocksPage() {
       <div className="blocks-canvas-area">
         <div className="sandbox-header">
           <div>
-            <span className="eyebrow">Grid Sandbox</span>
+            <span className="eyebrow">Logix Chain</span>
             <h2>{sandboxFlow.name}</h2>
-            <p>{sandboxFlow.blocks.length} blocks / {sandboxFlow.routes.length} routes / updated {new Date(sandboxFlow.updatedAt).toLocaleTimeString()}</p>
+            <p>{sandboxFlow.blocks.length} nodes / {sandboxFlow.routes.length} routes / {logixIssues.length} checks / updated {new Date(sandboxFlow.updatedAt).toLocaleTimeString()}</p>
           </div>
           <div className="header-actions">
             <button className="icon-button" onClick={resetSandboxFlow} title="Reset sandbox" aria-label="Reset sandbox">
@@ -491,7 +371,7 @@ export function BlocksPage() {
               <Waypoints size={17} aria-hidden="true" />
             </div>
             <div className="palette-list">
-              {sandboxBlockTemplates.map((template) => (
+              {LOGIX_BLOCK_TEMPLATES.map((template) => (
                 <button key={template.kind} onClick={() => addSandboxBlock(template.kind)}>
                   <span className={`palette-icon ${blockClassName(template.kind)}`}>
                     {flowBlockIcon(template.kind)}
@@ -616,6 +496,20 @@ export function BlocksPage() {
                   <small>{suggestion.detail}</small>
                 </button>
               ))}
+            </div>
+            <div className="suggestion-stack">
+              <div className="sandbox-section-heading compact">
+                <h3>Validation</h3>
+                <CheckCircle2 size={17} aria-hidden="true" />
+              </div>
+              {logixIssues.length > 0 ? logixIssues.slice(0, 4).map((issue) => (
+                <button key={issue.id} className={`logix-issue logix-issue-${issue.severity}`} type="button">
+                  <strong>{issue.title}</strong>
+                  <small>{issue.detail}</small>
+                </button>
+              )) : (
+                <div className="empty-debug">No chain validation issues.</div>
+              )}
             </div>
           </section>
         </div>

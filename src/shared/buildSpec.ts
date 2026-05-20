@@ -125,7 +125,15 @@ export function saveSpecToStorage(spec: BuildSpec): void {
 export function downloadSpecAsJson(spec: BuildSpec): void {
   const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const maybeDocument = (globalThis as {
+    document?: { createElement?: (tag: string) => { href: string; download: string; click: () => void } };
+  }).document;
+  const createElement = maybeDocument?.createElement;
+  if (!createElement) {
+    URL.revokeObjectURL(url);
+    return;
+  }
+  const a = createElement('a');
   a.href = url;
   a.download = `${spec.name.replace(/\s+/g, '-').toLowerCase()}.json`;
   a.click();

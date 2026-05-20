@@ -25,6 +25,12 @@ import {
 } from 'lucide-react';
 import { AGENT_PROFILES } from '../../shared/agents';
 import { getPlatformApi, isHttpPlatform } from '../../platform';
+import {
+  ALKEMIST_AGENT_APPENDIX,
+  ALKEMIST_QUICK_PROMPTS,
+  ALKEMIST_SANDBOX_PROFILES,
+  ALKEMIST_WORKSPACE_TEMPLATES
+} from '../labs/alkemist';
 import type {
   ChatMessage,
   DebugReport,
@@ -37,13 +43,6 @@ import type {
   WorkspaceFile
 } from '../../shared/types';
 import { useAppContext } from '../context/AppContext';
-
-const quickPrompts = [
-  'Plan the next implementation step.',
-  'Review this file for risks and missing tests.',
-  'Suggest a minimal refactor that preserves behavior.',
-  'Write a clear commit summary for these changes.'
-];
 
 const defaultToolchainRoot = '/Volumes/DJMT/FABLEDHARBINGER/toolchains';
 const makeSessionId = () => `fablecode-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -264,7 +263,7 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
   const [includeToolchainContext, setIncludeToolchainContext] = useState(true);
   const [holograimStatus, setHolograimStatus] = useState<HolograimStatus | null>(null);
   const [recall, setRecall] = useState<string[]>([]);
-  const [recallQuery, setRecallQuery] = useState('FableCode current workspace priorities and recent decisions');
+  const [recallQuery, setRecallQuery] = useState('Alkemist current workspace priorities, sandbox decisions, and preview risks');
   const [lastSaved, setLastSaved] = useState('Not saved yet');
   const [copiedKey, setCopiedKey] = useState('');
   const [busy, setBusy] = useState<'models' | 'workspace' | 'chat' | 'debug' | 'toolchain' | 'toolkits' | null>(null);
@@ -277,6 +276,21 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
     () => AGENT_PROFILES.find((p) => p.id === agentId) ?? AGENT_PROFILES[0],
     [agentId]
   );
+
+  const alkemistRuntimeContext = useMemo(() => {
+    const sandboxProfiles = ALKEMIST_SANDBOX_PROFILES
+      .map((profile) => `${profile.name}: ${profile.purpose} Approval: ${profile.requiresApproval.join(', ')}`)
+      .join('\n');
+    const workspaceTemplates = ALKEMIST_WORKSPACE_TEMPLATES
+      .map((template) => `${template.name} (${template.stack}) checks: ${template.defaultChecks.join(', ')}`)
+      .join('\n');
+    return [
+      'FabledLabs: Alkemist product context:',
+      'Electron code development space with local AI, sandboxed execution, and design previews.',
+      `Sandbox profiles:\n${sandboxProfiles}`,
+      `Workspace templates:\n${workspaceTemplates}`
+    ].join('\n');
+  }, []);
 
   const filteredFiles = useMemo(() => {
     const query = fileFilter.trim().toLowerCase();
@@ -581,7 +595,7 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
     const recallContext = recall.length > 0
       ? `Holograim recall:\n${recall.slice(0, 3).join('\n\n')}`
       : '';
-    const modelPrompt = buildModelPrompt(trimmed, [fileContext, localTools, references, recallContext]);
+    const modelPrompt = buildModelPrompt(trimmed, [alkemistRuntimeContext, fileContext, localTools, references, recallContext]);
     const nextMessages: ChatMessage[] = [...messages, { role: 'user', content: trimmed }];
     setMessages(nextMessages);
     setPrompt('');
@@ -591,7 +605,7 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
         model: model.trim(),
         temperature: agent.temperature,
         messages: [
-          { role: 'system', content: agent.systemPrompt },
+          { role: 'system', content: `${agent.systemPrompt}\n${ALKEMIST_AGENT_APPENDIX}` },
           ...messages.slice(-12),
           { role: 'user', content: modelPrompt }
         ]
@@ -639,10 +653,10 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
     const commands = capability.commands.slice(0, 6).map((c) => c.name).join(', ');
     const configs = capability.configFiles.slice(0, 4).join(', ');
     setPrompt([
-      'Use the ', capability.name, ' capability in FableCode. Status: ', capability.status, '. ',
+      'Use the ', capability.name, ' capability in Alkemist. Status: ', capability.status, '. ',
       commands ? `Available commands: ${commands}. ` : '',
       configs ? `Workspace configs: ${configs}. ` : '',
-      'Suggest the safest next action for this workspace.'
+      'Name the sandbox profile and suggest the safest next action for this workspace.'
     ].join(''));
   }
 
@@ -659,21 +673,12 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
 
   return (
     <main className="app-shell">
-      <div className="lava-background" aria-hidden="true">
-        <span className="lava-blob lava-blob-a" />
-        <span className="lava-blob lava-blob-b" />
-        <span className="lava-blob lava-blob-c" />
-        <span className="lava-blob lava-blob-d" />
-        <span className="lava-blob lava-blob-e" />
-        <span className="lava-blob lava-blob-f" />
-      </div>
-
       <aside className="agent-rail" aria-label="Agent and runtime controls">
         <div className="brand-block" ref={brandDragRef}>
           <div className="brand-mark" aria-hidden="true"><Sparkles size={18} /></div>
           <div>
-            <h1>FableCode</h1>
-            <p>Local agent workbench</p>
+            <h1>Alkemist</h1>
+            <p>AI code lab + sandbox</p>
           </div>
         </div>
 
@@ -700,19 +705,31 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
 
         {/* Mode navigation links */}
         <nav className="rail-mode-nav" aria-label="Switch mode">
-          <NavLink to="/blocks" className={({ isActive }) => `rail-mode-link${isActive ? ' active' : ''}`}>
+          <NavLink to="/logix" className={({ isActive }) => `rail-mode-link${isActive ? ' active' : ''}`}>
             <Workflow size={16} aria-hidden="true" />
-            <span>Blocks</span>
+            <span>Logix</span>
           </NavLink>
-          <NavLink to="/school" className={({ isActive }) => `rail-mode-link${isActive ? ' active' : ''}`}>
+          <NavLink to="/scribe" className={({ isActive }) => `rail-mode-link${isActive ? ' active' : ''}`}>
             <BookOpen size={16} aria-hidden="true" />
-            <span>School</span>
+            <span>Scribe</span>
           </NavLink>
           <NavLink to="/preview" className={({ isActive }) => `rail-mode-link${isActive ? ' active' : ''}`}>
             <Code2 size={16} aria-hidden="true" />
             <span>Preview</span>
           </NavLink>
         </nav>
+
+        <section className="rail-section sandbox-profile-box" aria-labelledby="sandbox-profile-heading">
+          <h2 id="sandbox-profile-heading">Sandbox Profiles</h2>
+          <div className="sandbox-profile-list">
+            {ALKEMIST_SANDBOX_PROFILES.slice(0, 3).map((profile) => (
+              <span key={profile.id}>
+                <strong>{profile.name}</strong>
+                <small>{profile.requiresApproval.length} approval gates</small>
+              </span>
+            ))}
+          </div>
+        </section>
 
         <section className="rail-section" aria-labelledby="agents-heading">
           <h2 id="agents-heading">Agents</h2>
@@ -829,7 +846,7 @@ export function BuildPage() { // NOSONAR - The Electron workbench state remains 
         </div>
 
         <div className="quick-prompts" aria-label="Quick prompts">
-          {quickPrompts.map((item) => (
+          {ALKEMIST_QUICK_PROMPTS.map((item) => (
             <button key={item} onClick={() => sendPrompt(item)} disabled={busy === 'chat'}>
               {item}
             </button>

@@ -1,33 +1,35 @@
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Code2, Eye, Sparkles, Workflow } from 'lucide-react';
 import { AGENT_PROFILES } from '../../shared/agents';
+import { FABLED_LABS_BY_ID } from '../../shared/labs';
 import type { AgentId } from '../../shared/types';
 import { useAppContext } from '../context/AppContext';
+import { FabledAtmosphere } from '../components/FabledAtmosphere';
 
 const MODES = [
   {
-    to: '/build',
+    to: '/alkemist',
     icon: Code2,
-    label: 'Build',
-    description: 'Plan and build with the agent. File-aware chat with workspace, toolchain, and debug tools.'
+    label: FABLED_LABS_BY_ID.alkemist.shortName,
+    description: FABLED_LABS_BY_ID.alkemist.summary
   },
   {
-    to: '/preview',
-    icon: Eye,
-    label: 'Preview',
-    description: 'Test and troubleshoot. Live preview of your running code with dedicated agent chat.'
-  },
-  {
-    to: '/blocks',
-    icon: Workflow,
-    label: 'Blocks',
-    description: 'Visual block coding. Drag-and-drop flow builder with an AI copilot to guide routing.'
-  },
-  {
-    to: '/school',
+    to: '/scribe',
     icon: BookOpen,
-    label: 'School',
-    description: 'Learn by doing. Split-screen lessons with a live CSS preview as you write.'
+    label: FABLED_LABS_BY_ID.scribe.shortName,
+    description: FABLED_LABS_BY_ID.scribe.summary
+  },
+  {
+    to: '/tesseract',
+    icon: Eye,
+    label: FABLED_LABS_BY_ID.tesseract.shortName,
+    description: FABLED_LABS_BY_ID.tesseract.summary
+  },
+  {
+    to: '/logix',
+    icon: Workflow,
+    label: FABLED_LABS_BY_ID.logix.shortName,
+    description: FABLED_LABS_BY_ID.logix.summary
   }
 ];
 
@@ -41,22 +43,15 @@ export function HubPage() {
 
   return (
     <main className="hub-root">
-      <div className="lava-background" aria-hidden="true">
-        <span className="lava-blob lava-blob-a" />
-        <span className="lava-blob lava-blob-b" />
-        <span className="lava-blob lava-blob-c" />
-        <span className="lava-blob lava-blob-d" />
-        <span className="lava-blob lava-blob-e" />
-        <span className="lava-blob lava-blob-f" />
-      </div>
+      <FabledAtmosphere atmosphere={FABLED_LABS_BY_ID.alkemist.atmosphere} />
 
       <div className="hub-content">
         {/* Brand */}
         <header className="hub-brand">
           <div className="brand-mark" aria-hidden="true"><Sparkles size={22} /></div>
           <div>
-            <h1>FableCode</h1>
-            <p>Local-first AI coding workbench</p>
+            <h1>FabledLabs</h1>
+            <p>Focused products for code, learning, design, and logic</p>
           </div>
         </header>
 
@@ -84,7 +79,7 @@ export function HubPage() {
 
         {/* Mode cards */}
         <section className="hub-section" aria-labelledby="hub-modes-heading">
-          <h2 id="hub-modes-heading" className="hub-section-title">Select a mode</h2>
+          <h2 id="hub-modes-heading" className="hub-section-title">Launch a lab</h2>
           <div className="hub-modes">
             {MODES.map(({ to, icon: Icon, label, description }) => (
               <button

@@ -1,23 +1,27 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { BookOpen, Box, Code2, Eye, Home, Sparkles, Workflow } from 'lucide-react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { BookOpen, Code2, Eye, Home, Sparkles, Workflow } from 'lucide-react';
 import { useAppContext } from './context/AppContext';
 import { AGENT_PROFILES } from '../shared/agents';
+import { FABLED_LABS_BY_ID, labForPath } from '../shared/labs';
+import { FabledAtmosphere } from './components/FabledAtmosphere';
 
 const NAV_ITEMS = [
   { to: '/',        icon: Home,     label: 'Hub',     exact: true },
-  { to: '/build',   icon: Code2,    label: 'Build',   exact: false },
-  { to: '/preview', icon: Eye,      label: 'Preview', exact: false },
-  { to: '/blocks',  icon: Workflow, label: 'Blocks',  exact: false },
-  { to: '/school',  icon: BookOpen, label: 'School',  exact: false },
-  { to: '/design',  icon: Box,      label: 'Design',  exact: false }
+  { to: '/alkemist', icon: Code2,    label: FABLED_LABS_BY_ID.alkemist.shortName, exact: false },
+  { to: '/scribe',   icon: BookOpen, label: FABLED_LABS_BY_ID.scribe.shortName, exact: false },
+  { to: '/tesseract', icon: Eye,     label: FABLED_LABS_BY_ID.tesseract.shortName, exact: false },
+  { to: '/logix',    icon: Workflow, label: FABLED_LABS_BY_ID.logix.shortName, exact: false }
 ];
 
 export function AppShell() {
   const { agentId } = useAppContext();
+  const location = useLocation();
   const agent = AGENT_PROFILES.find((p) => p.id === agentId) ?? AGENT_PROFILES[0];
+  const activeLab = labForPath(location.pathname);
 
   return (
-    <div className="shell-root">
+    <div className="shell-root" data-lab={activeLab.id}>
+      <FabledAtmosphere atmosphere={activeLab.atmosphere} />
       <nav className="app-top-nav" aria-label="Main navigation">
         <span className="top-nav-brand" aria-hidden="true">
           <Sparkles size={15} />

@@ -116,7 +116,8 @@ ipcMain.handle('workspace:listFiles', async (_event: IpcMainInvokeEvent, workspa
 ipcMain.handle('workspace:readFile', async (_event: IpcMainInvokeEvent, payload: { workspacePath: string; relativePath: string }): Promise<string> => {
   const root = path.resolve(payload.workspacePath);
   const target = path.resolve(root, payload.relativePath);
-  if (!target.startsWith(root)) {
+  // Append path.sep so /foo/bar does not match /foo/bar-secret/...
+  if (target !== root && !target.startsWith(root + path.sep)) {
     throw new Error('Refusing to read outside the selected workspace.');
   }
 

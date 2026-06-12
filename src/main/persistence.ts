@@ -204,13 +204,23 @@ function shouldQueueHolograimSync(snapshot: PersistenceSnapshot): boolean {
     return false;
   }
 
-  lastHolograimSignature = signature;
-  lastHolograimSyncAt = now;
   return true;
+}
+
+function commitHolograimSyncCheckpoint(snapshot: PersistenceSnapshot): void {
+  const latestMessage = snapshot.messages.at(-1);
+  lastHolograimSignature = [
+    snapshot.sessionId,
+    snapshot.messages.length,
+    latestMessage?.role ?? '',
+    latestMessage?.content.slice(0, 140) ?? ''
+  ].join('|');
+  lastHolograimSyncAt = Date.now();
 }
 
 function queueHolograimSync(snapshot: PersistenceSnapshot): void {
   holograimSyncInFlight = true;
+  commitHolograimSyncCheckpoint(snapshot);
   storeSnapshotInHolograim(snapshot).finally(() => {
     holograimSyncInFlight = false;
   });
@@ -250,6 +260,8 @@ async function callHolograimTool(name: string, args: Record<string, unknown>): P
     let stderr = '';
     let settled = false;
     let nextId = 1;
+    const initializeId = nextId++;
+    const toolCallId = nextId++;
 
     const timeout = setTimeout(() => {
       if (!settled) {
@@ -261,7 +273,7 @@ async function callHolograimTool(name: string, args: Record<string, unknown>): P
 
     child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString('utf8');
-      const response = extractResponse(stdout, 2);
+      const response = extractResponse(stdout, toolCallId);
       if (response && !settled) {
         settled = true;
         clearTimeout(timeout);
@@ -288,7 +300,7 @@ async function callHolograimTool(name: string, args: Record<string, unknown>): P
 
     child.on('exit', () => {
       if (!settled) {
-        const response = extractResponse(stdout, 2);
+        const response = extractResponse(stdout, toolCallId);
         settled = true;
         clearTimeout(timeout);
         if (response?.result) {
@@ -299,13 +311,13 @@ async function callHolograimTool(name: string, args: Record<string, unknown>): P
       }
     });
 
-    writeJsonRpc(child.stdin, { jsonrpc: '2.0', id: nextId++, method: 'initialize', params: {
+    writeJsonRpc(child.stdin, { jsonrpc: '2.0', id: initializeId, method: 'initialize', params: {
       protocolVersion: '2024-11-05',
       capabilities: {},
       clientInfo: { name: 'FableCode', version: '0.1.0' }
     } });
     writeJsonRpc(child.stdin, { jsonrpc: '2.0', method: 'notifications/initialized', params: {} });
-    writeJsonRpc(child.stdin, { jsonrpc: '2.0', id: nextId++, method: 'tools/call', params: { name, arguments: args } });
+    writeJsonRpc(child.stdin, { jsonrpc: '2.0', id: toolCallId, method: 'tools/call', params: { name, arguments: args } });
   });
 }
 
@@ -327,7 +339,8 @@ function extractResponse(buffer: string, responseId: number): JsonRpcResponse | 
         return parsed;
       }
     } catch {
-      return null;
+      // Non-JSON lines (server logs, partial chunks) are expected. Keep scanning.
+      continue;
     }
   }
 

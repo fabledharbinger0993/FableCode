@@ -284,8 +284,9 @@ export function BlocksPage() {
         ]
       });
       setSandboxMessages([...nextMessages, { role: 'assistant', content: response || 'The model returned an empty sandbox response.' }]);
-    } catch {
-      // Error silently handled — UI already shows busy state.
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'unknown error';
+      setSandboxMessages([...nextMessages, { role: 'assistant', content: `Logix copilot request failed: ${detail}` }]);
     } finally {
       setSandboxBusy(false);
     }

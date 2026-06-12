@@ -30,6 +30,25 @@ import type {
 
 const LOCAL_SNAPSHOT_KEY = 'fablecode_session_snapshot';
 
+// Default backend request timeout. Long enough for slow model responses,
+// short enough that a dead server doesn't hang the UI indefinitely.
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Backend request timed out after ${Math.round(timeoutMs / 1000)}s.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export class HttpPlatformApi implements FableApi {
   private readonly baseUrl: string;
 
@@ -190,9 +209,9 @@ export class HttpPlatformApi implements FableApi {
   // ── Private helpers ──────────────────────────────────────────────────────
 
   private async get<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}${path}`, {
       headers: { Accept: 'application/json' }
-    });
+    }, DEFAULT_REQUEST_TIMEOUT_MS);
     if (!response.ok) {
       throw new Error(`Backend error ${response.status}: ${await response.text()}`);
     }
@@ -200,11 +219,11 @@ export class HttpPlatformApi implements FableApi {
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body)
-    });
+    }, DEFAULT_REQUEST_TIMEOUT_MS);
     if (!response.ok) {
       throw new Error(`Backend error ${response.status}: ${await response.text()}`);
     }
